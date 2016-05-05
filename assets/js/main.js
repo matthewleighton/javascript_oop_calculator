@@ -15,9 +15,9 @@ function Calculator() {
 Calculator.prototype.receiveInput = function(inputValue) {
 	var currentCalculation = this.openCalculations[this.openCalculations.length-1].calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
-
 	// Check if the input is a digit
-	if (!isNaN(inputValue || inputValue == '.')) {
+	if (!isNaN(inputValue) || inputValue == '.') {
+		
 		// Check if the previous input was also a digit
 		if (!isNaN(lastInput) || lastInput == '.') {
 			currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
@@ -47,7 +47,7 @@ Calculation.prototype.runCalculation = function() {
 	var workingCalculationArray = this.calculationArray;
 
 	while (workingCalculationArray.length > 1) {
-		var memory = parseInt(workingCalculationArray[0]);
+		var memory = parseFloat(workingCalculationArray[0]);
 		var currentOperand;
 		
 		for (var i = 1; i < workingCalculationArray.length; i++) {
@@ -63,7 +63,7 @@ Calculation.prototype.runCalculation = function() {
 			} else {
 				// Check if the following operand takes priority by order of operations.
 				if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperand.priority) {
-					memory = parseInt(workingCalculationArray[i]);
+					memory = parseFloat(workingCalculationArray[i]);
 				} else {
 					workingCalculationArray[i] = currentOperand.performOperation(memory, workingCalculationArray[i]);
 					memory = workingCalculationArray[i];
@@ -89,25 +89,25 @@ function Operand(symbol) {
 		case '+':
 			this.priority = 1;
 			this.performOperation = function(a, b) {
-				return parseInt(a) + parseInt(b);
+				return parseFloat(a) + parseFloat(b);
 			}
 			break;
 		case '-':
 			this.priority = 1;
 			this.performOperation = function(a, b) {
-				return parseInt(a) - parseInt(b);
+				return parseFloat(a) - parseFloat(b);
 			}
 			break;
 		case '*':
 			this.priority = 2;
 			this.performOperation = function(a, b) {
-				return parseInt(a) * parseInt(b);
+				return parseFloat(a) * parseFloat(b);
 			}
 			break;
 		case '/':
 			this.priority = 2;
 			this.performOperation = function(a, b) {
-				return parseInt(a) / parseInt(b);
+				return parseFloat(a) / parseFloat(b);
 			}
 			break;
 		case '^':

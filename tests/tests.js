@@ -246,7 +246,7 @@ QUnit.test("Correctly handles three digit numbers: 125+2=127", function(assert) 
 	assert.equal(testCalculator.calculateAll(), '127');
 });
 
-QUnit.only("Correctly handles a calculation including one decimal: 1.5+1=2.5",function(assert) {
+QUnit.test("Correctly handles a calculation including one decimal: 1.5+1=2.5",function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('.');
@@ -258,7 +258,7 @@ QUnit.only("Correctly handles a calculation including one decimal: 1.5+1=2.5",fu
 	assert.equal(testCalculator.calculateAll(), '2.5');
 })
 
-/*
+
 QUnit.test("Correctly handles a calculation of two decimals: 1.5+1.4=2.9", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
@@ -271,5 +271,5 @@ QUnit.test("Correctly handles a calculation of two decimals: 1.5+1.4=2.9", funct
 
 	assert.equal(testCalculator.calculateAll(), '2.9');
 });
-*/
+
 // Todo - prevent input of operand as first input (except minus, which creates a negative number);
