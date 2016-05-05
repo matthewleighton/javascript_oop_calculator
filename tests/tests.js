@@ -206,6 +206,21 @@ QUnit.test("Correctly prioritises exponents before multiplication: 2*3^2=18", fu
 	assert.equal(testCalculator.calculateAll(), '18');
 });
 
+QUnit.only("Correctly answers a calculation switching back and forth between different operands: 1+2^2*4/2+1=10", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('^');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('4');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
 
+	assert.equal(testCalculator.calculateAll(), '10');
+});
 
 // Todo - prevent input of operand as first input (except minus, which creates a negative number);
