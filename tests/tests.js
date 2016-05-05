@@ -206,7 +206,7 @@ QUnit.test("Correctly prioritises exponents before multiplication: 2*3^2=18", fu
 	assert.equal(testCalculator.calculateAll(), '18');
 });
 
-QUnit.only("Correctly answers a calculation switching back and forth between different operands: 1+2^2*4/2+1=10", function(assert) {
+QUnit.test("Correctly answers a calculation switching back and forth between different operands: 1+2^2*4/2+1=10", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('+');
@@ -223,4 +223,53 @@ QUnit.only("Correctly answers a calculation switching back and forth between dif
 	assert.equal(testCalculator.calculateAll(), '10');
 });
 
+QUnit.test("Correctly handles a calculation resulting in a decimal: 3/2=1.5", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), '1.5');
+});
+
+QUnit.test("Correctly handles three digit numbers: 125+2=127", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+
+	console.log(testCalculator.openCalculations[0].calculationArray);
+
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 3, "CalculationArray contains 3 elements after entering '125+2'");
+	assert.equal(testCalculator.calculateAll(), '127');
+});
+
+QUnit.only("Correctly handles a calculation including one decimal: 1.5+1=2.5",function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+	console.log(testCalculator.openCalculations[0].calculationArray);
+
+	assert.equal(testCalculator.calculateAll(), '2.5');
+})
+
+/*
+QUnit.test("Correctly handles a calculation of two decimals: 1.5+1.4=2.9", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('4');
+
+	assert.equal(testCalculator.calculateAll(), '2.9');
+});
+*/
 // Todo - prevent input of operand as first input (except minus, which creates a negative number);

@@ -17,9 +17,9 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	var lastInput = currentCalculation[currentCalculation.length-1];
 
 	// Check if the input is a digit
-	if (validInputDigits.indexOf(inputValue) >= 0) {
+	if (!isNaN(inputValue || inputValue == '.')) {
 		// Check if the previous input was also a digit
-		if (validInputDigits.indexOf(lastInput) >= 0) {
+		if (!isNaN(lastInput) || lastInput == '.') {
 			currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
 		}
 		else {
@@ -121,8 +121,10 @@ function Operand(symbol) {
 /**
 * Variables
 **/
-var validInputDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'];
 var validOperands = ['+', '-', '*', '/', '^'];
+
+// validInputDigits is most likely no longer needed, as I'm now checking via isNaN. Leaving it commented for now, just in case.
+//var validInputDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'];
 
 
 var calculator = new Calculator();
