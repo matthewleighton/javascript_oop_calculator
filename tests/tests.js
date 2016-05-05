@@ -138,4 +138,50 @@ QUnit.test("1+1+1=3", function(assert) {
 
 	assert.equal(testCalculator.calculateAll(), '3');
 });
+
+QUnit.test("9-1-1=7", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('9');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('1');
+
+	assert.equal(testCalculator.calculateAll(), '7');
+});
+
+QUnit.test("2*3*4=24", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('4');
+
+	assert.equal(testCalculator.calculateAll(), '24');
+});
+
+QUnit.test("8/2/2=2", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('8');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), '2');
+});
+
+// Multiple digit numbers must be inputted via multiple inputs of single digits
+QUnit.test("Can handle two digit numbers: 10+5=15", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('5');
+
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 3, "CalculationArray contains 3 elements after entering '10+5'");
+	assert.equal(testCalculator.calculateAll(), '15');
+});
+
 // Todo - prevent input of operand as first input (except minus, which creates a negative number);
