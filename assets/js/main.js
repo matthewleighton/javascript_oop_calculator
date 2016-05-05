@@ -51,6 +51,8 @@ Calculation.prototype.runCalculation = function() {
 		var currentOperand;
 		
 		for (var i = 1; i < workingCalculationArray.length; i++) {
+			console.log("Start loop: i is " + workingCalculationArray[i]);
+			console.log("i = " + i);
 			// Check if the object we're looking at is a parenthesis.
 			// If so, calculate it first.
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
@@ -64,13 +66,17 @@ Calculation.prototype.runCalculation = function() {
 					memory = parseInt(workingCalculationArray[i]);
 				} else {
 					workingCalculationArray[i] = currentOperand.performOperation(memory, workingCalculationArray[i]);
+					memory = workingCalculationArray[i];
 					workingCalculationArray[i-1] = null;
 					workingCalculationArray[i-2] = null;
+					console.log("finised loop");
+					console.log(workingCalculationArray);
 				}
 			}
 		}
-
+		console.log(workingCalculationArray);
 		workingCalculationArray = workingCalculationArray.filter(function(n){return n != null});
+		console.log(workingCalculationArray);
 	}
 
 	return workingCalculationArray[0];

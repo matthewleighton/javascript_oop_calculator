@@ -78,6 +78,8 @@ QUnit.test("The appropriate operand is added to the calculationArray when the co
 	// Add tests for other operands.
 });
 
+
+// Testing two digit calculations
 QUnit.test("1+1=2", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
@@ -121,5 +123,19 @@ QUnit.test("2^3=8", function(assert) {
 	testCalculator.receiveInput('3');
 
 	assert.equal(testCalculator.calculateAll(), '8');
+});
+
+// Testing three digit calculations
+QUnit.test("1+1+1=3", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 5, "CalculationArray contains 5 elements after entering '1+1+1'");
+
+	assert.equal(testCalculator.calculateAll(), '3');
 });
 // Todo - prevent input of operand as first input (except minus, which creates a negative number);
