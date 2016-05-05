@@ -184,4 +184,28 @@ QUnit.test("Can handle two digit numbers: 10+5=15", function(assert) {
 	assert.equal(testCalculator.calculateAll(), '15');
 });
 
+QUnit.test("Correctly orders addition and multiplication according to order of operations: 1+2*3=7", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('3');
+
+	assert.equal(testCalculator.calculateAll(), '7');
+});
+
+QUnit.test("Correctly prioritises exponents before multiplication: 2*3^2=18", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('^');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), '18');
+});
+
+
+
 // Todo - prevent input of operand as first input (except minus, which creates a negative number);
