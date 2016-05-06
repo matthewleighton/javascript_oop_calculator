@@ -272,4 +272,73 @@ QUnit.test("Correctly handles a calculation of two decimals: 1.5+1.4=2.9", funct
 	assert.equal(testCalculator.calculateAll(), '2.9');
 });
 
-// Todo - prevent input of operand as first input (except minus, which creates a negative number);
+QUnit.test("Correctly handles a calculation resulting in a negative number: 1-2=-1", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), '-1');
+});
+
+QUnit.test("Correctly handles a calculation resulting in a negative decimal: 0.5-1=-0.5", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('1');
+
+	assert.equal(testCalculator.calculateAll(), '-0.5');
+});
+
+QUnit.test("Ignore first input if inputValue is an operand", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('+');
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 0, "CalculationArray is empty after entering only a '+'");
+
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('^');
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 0, "CalculationArray is empty after entering various operands");
+});
+
+QUnit.test("Usual performance still works after initially entering ignored operands as first input", function(assert) {
+	testCalculator = new Calculator;
+	
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('^');
+
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 3, "CalculationArray only has 3 elements after entering '1+1' after invalid operands");
+	assert.equal(testCalculator.calculateAll(), '2', "Still provides a correct answer after initially recieving invalid operands");
+});
+
+
+QUnit.test("Allows for input of negative number as first input", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 1, "CalculationArray contains only 1 element after entering '-2'");
+	assert.equal(testCalculator.openCalculations[0].calculationArray[0], '-2', "First element of calculationArray is '-2'");
+
+	console.log(testCalculator.openCalculations[0].calculationArray);
+});
+
+QUnit.test("Correctly handles multiple entries of operands including minus", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('+');
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 0, "CalculationArray empty after entering '-+'");
+
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('*');
+	assert.equal(testCalculator.openCalculations[0].calculationArray.length, 1, "CalculationArray only contains one element after entering -*");
+	assert.equal(testCalculator.openCalculations[0].calculationArray[0], '-', "CalculationArray first element is a minus after entering -* ")
+});

@@ -9,28 +9,58 @@ function Calculator() {
 	// This array will have multiple elements when we have unclosed parenthasies.
 	this.openCalculations = [new Calculation];
 
+	this.validOperands = ['+', '-', '*', '/', '^'];
+
 	
 }
 
 Calculator.prototype.receiveInput = function(inputValue) {
 	var currentCalculation = this.openCalculations[this.openCalculations.length-1].calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
-	// Check if the input is a digit
+	
+	// Special cases regarding operands as first input.
+	if (currentCalculation.length == 0 && this.isValidOperand(inputValue)) {
+		if (inputValue == '-') {
+			currentCalculation.push(inputValue);
+		}
+		return;
+	}
+
+	// Special case for using a negative number as first input.
+	// Addition causes the calculation to be cleared, while all other operands are ignored.
+	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
+		if (inputValue == '+') {
+			this.openCalculations[this.openCalculations.length-1].calculationArray = [];
+		}
+		return		
+	}
+
+	// Check if the input is a digit.
 	if (!isNaN(inputValue) || inputValue == '.') {
-		
-		// Check if the previous input was also a digit
-		if (!isNaN(lastInput) || lastInput == '.') {
+		// Check if the previous input was also a digit.
+		if (!isNaN(lastInput) || lastInput == '.' || currentCalculation[0] == '-') {
 			currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
 		}
 		else {
 			currentCalculation.push(inputValue);
 		}
-	// Check if the input is an operand
+	// Check if the input is an operand.
 	} else if (validOperands.indexOf(inputValue) >= 0) {
 		currentCalculation.push(new Operand(inputValue));
 	}
 }
 
+// Returns true if the input value is either a digit or '.'
+Calculator.prototype.isValidDigit = function(inputValue) {
+	return (!isNaN(inputValue) || inputValue == '.') ? true : false;
+}
+
+// Returns true if the input value is an operand
+Calculator.prototype.isValidOperand = function(inputValue) {
+	return (this.validOperands.indexOf(inputValue) >= 0) ? true : false;
+}
+
+// Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
 	return this.openCalculations[0].runCalculation();
 }
@@ -43,6 +73,8 @@ function Calculation() {
 	this.calculationArray = [];
 }
 
+// Returns the answer of this calculation.
+// Recursively solves parentheses as calculation objects of their own.
 Calculation.prototype.runCalculation = function() {
 	var workingCalculationArray = this.calculationArray;
 
@@ -117,6 +149,11 @@ function Operand(symbol) {
 			}
 	}
 }
+
+/**
+* Other Functions
+**/
+
 
 /**
 * Variables
