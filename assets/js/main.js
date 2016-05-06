@@ -1,21 +1,32 @@
 /**
-* Classes
+* Calculator Class
 **/
-
-//Calculator Class
 function Calculator() {
 	
 	// An array of calculation objects. We're always targeting the last element.
 	// This array will have multiple elements when we have unclosed parenthasies.
-	this.openCalculations = [new Calculation];
-
+	this.baseCalculation = new Calculation;
+	//this.openCalculations = [new Calculation];
 	this.validOperands = ['+', '-', '*', '/', '^'];
-
-	
 }
 
+// Returns the calculation object which the inputted values should be entered into.
+// For example, if we have several open parentheses, this will return the most recently opened calculation.
+Calculator.prototype.findInputTarget = function(calculation) {
+	var lastCalculation = calculation.calculationArray[calculation.calculationArray.length-1];
+	
+	if (lastCalculation && lastCalculation.constructor.name == "Calculation") {
+		return this.findInputTarget(lastCalculation);
+	}
+	//return lastCalculation;
+	return calculation;
+}
+
+// Add either a digit or operand onto the current operation.
 Calculator.prototype.receiveInput = function(inputValue) {
-	var currentCalculation = this.openCalculations[this.openCalculations.length-1].calculationArray;
+	var currentCalculation = this.findInputTarget(this.baseCalculation).calculationArray;
+
+	//var currentCalculation = this.openCalculations[this.openCalculations.length-1].calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
 	
 	// Special cases regarding operands as first input.
@@ -30,9 +41,9 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	// Addition causes the calculation to be cleared, while all other operands are ignored.
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
-			this.openCalculations[this.openCalculations.length-1].calculationArray = [];
+			this.findInputTarget(this.baseCalculation).calculationArray = [];
 		}
-		return		
+		return;
 	}
 
 	// Check if the input is a digit.
@@ -45,8 +56,13 @@ Calculator.prototype.receiveInput = function(inputValue) {
 			currentCalculation.push(inputValue);
 		}
 	// Check if the input is an operand.
-	} else if (validOperands.indexOf(inputValue) >= 0) {
+	} else if (this.isValidOperand(inputValue)) {
 		currentCalculation.push(new Operand(inputValue));
+	}
+
+	// Opening parentheses
+	if (inputValue == '(') {
+		currentCalculation.push(new Calculation);
 	}
 }
 
@@ -62,13 +78,12 @@ Calculator.prototype.isValidOperand = function(inputValue) {
 
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
-	return this.openCalculations[0].runCalculation();
+	return this.baseCalculation.runCalculation();
 }
 
-
-
-
-// Calculation Class
+/**
+* Calculation Class
+**/
 function Calculation() {
 	this.calculationArray = [];
 }
@@ -78,17 +93,22 @@ function Calculation() {
 Calculation.prototype.runCalculation = function() {
 	var workingCalculationArray = this.calculationArray;
 
-	while (workingCalculationArray.length > 1) {
+	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
+		// If the first element is a parenthesis, evaluate it first and replace it with its value.
+		// We do this since we usually skip the first element in the for loop.
+		if (isNaN(workingCalculationArray[0])) {
+			workingCalculationArray[0] = workingCalculationArray[0].runCalculation();
+		}
 		var memory = parseFloat(workingCalculationArray[0]);
 		var currentOperand;
 		
 		for (var i = 1; i < workingCalculationArray.length; i++) {
-			console.log("Start loop: i is " + workingCalculationArray[i]);
-			console.log("i = " + i);
 			// Check if the object we're looking at is a parenthesis.
 			// If so, calculate it first.
+			//console.log(workingCalculationArray[i]);
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
-				workingCalculationArray[i] = workingCalculationArray[i].runCalculation;
+				console.log("gszfgz");
+				workingCalculationArray[i] = workingCalculationArray[i].runCalculation();
 			}
 			if (workingCalculationArray[i].constructor.name == "Operand") {
 				currentOperand = workingCalculationArray[i];
@@ -101,12 +121,10 @@ Calculation.prototype.runCalculation = function() {
 					memory = workingCalculationArray[i];
 					workingCalculationArray[i-1] = null;
 					workingCalculationArray[i-2] = null;
-					console.log("finised loop");
-					console.log(workingCalculationArray);
 				}
 			}
 		}
-		console.log(workingCalculationArray);
+		// Remove all null values (numbers we've already calculated) from the array.
 		workingCalculationArray = workingCalculationArray.filter(function(n){return n != null});
 		console.log(workingCalculationArray);
 	}
@@ -114,8 +132,9 @@ Calculation.prototype.runCalculation = function() {
 	return workingCalculationArray[0];
 }
 
-
-// Operand Class
+/**
+* Operand Class
+**/
 function Operand(symbol) {
 	switch (symbol) {
 		case '+':
@@ -153,15 +172,5 @@ function Operand(symbol) {
 /**
 * Other Functions
 **/
-
-
-/**
-* Variables
-**/
-var validOperands = ['+', '-', '*', '/', '^'];
-
-// validInputDigits is most likely no longer needed, as I'm now checking via isNaN. Leaving it commented for now, just in case.
-//var validInputDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'];
-
 
 var calculator = new Calculator();
