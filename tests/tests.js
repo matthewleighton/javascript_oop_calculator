@@ -373,7 +373,7 @@ QUnit.test("3*(1+2)=9", function(assert) {
 	assert.equal(testCalculator.calculateAll(), 9);
 });
 
-QUnit.only("25-(6/3)*(1+1)=21", function(assert) {
+QUnit.test("25-(6/3)*(1+1)=21", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('2');
 	testCalculator.receiveInput('5');
@@ -391,4 +391,88 @@ QUnit.only("25-(6/3)*(1+1)=21", function(assert) {
 	testCalculator.receiveInput(')');
 
 	assert.equal(testCalculator.calculateAll(), 21);
+});
+
+QUnit.test("Can solve questions containing parentheses within parentheses: 3*(2+8*(5-3)-1)+2=53", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('8');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), 53);
+});
+
+QUnit.test("Correctly prioritises parentheses ahead of exponents: 1+2*(3+4)^2=99", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('4');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('^');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), 99);
+});
+
+QUnit.test("Parentheses cannot be closed while they are empty - the input of ')' will be ignored", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('1');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 3, "The baseCalculation calculationArray contains 3 elements - the parenthesis was never closed");
+	assert.equal(testCalculator.calculateAll(), 2, "'1+(1'=2");
+});
+
+QUnit.test("4*(2+3*()2+1))=44", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('4');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput(')');
+	
+	assert.equal(testCalculator.calculateAll(), 44, "False closure of the parenthesis was ignored");
+});
+
+QUnit.test("A number next to a parenthesis will be understood as that number multiplied by the parenthesis", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.calculateAll(), 8, "2(1+3)=8");
 });

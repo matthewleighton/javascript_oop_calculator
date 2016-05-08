@@ -13,51 +13,31 @@ function Calculator() {
 
 // Returns the calculation object which the inputted values should be entered into.
 // For example, if we have several parentheses this will return the last open one.
-Calculator.prototype.findInputTarget = function(calculation, endParenthesis = false, previousCalculation = null) {
-	console.log("findInputTarget()");
-	if (endParenthesis) {
-		console.log("end parentheses");
-	}
-	console.log("Previous calculation at start of function is:");
-	console.log(previousCalculation);
+Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = false, previousCalculation = null) {
 	// The last element of the calculationArray we're looking at.
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
 
-	//console.log("Last calculation is ");
-	//console.log(lastCalculation);
-	
-	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {
-		console.log("Last element is an open calculation");
+	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {	
 		// If the input was a closing parenthesis, we set the last calculation to 'closed', and return the 2nd from last calcualtion.
-		if (endParenthesis && !(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation")) {
-			console.log("closing parenthesis");
-			//lastElement.calculationArray[lastElement.calculationArray.length-1].isOpen = false;
+		if (closeParenthesis &&
+			lastElement.calculationArray[lastElement.calculationArray.length-1] &&
+			!(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation"))
+		{
 			lastElement.isOpen = false;
-			console.log(previousCalculation);
-			return calculation;
+			return calculation;		
 		}
-		console.log("previousCalculation will be:");
-		console.log(calculation);
-		return this.findInputTarget(lastElement, endParenthesis, calculation);
+		return this.findInputTarget(lastElement, closeParenthesis, calculation);
 	}
-	//return lastCalculation;
-	//console.log("Calculation is:");
-	//console.log(calculation);
+
 	return calculation;
 }
 
 // Add either a digit or operand onto the current operation.
 Calculator.prototype.receiveInput = function(inputValue) {
 	console.log("---receiveInput---");
-	// Refactor this part
-	if (inputValue == ')') {
-		var endParenthesis = true;
-	} else {
-		var endParenthesis = false;
-	}
-	var currentCalculation = this.findInputTarget(this.baseCalculation, endParenthesis).calculationArray;
 
-	//var currentCalculation = this.openCalculations[this.openCalculations.length-1].calculationArray;
+	var closeParenthesis = inputValue == ')' ? true : false;
+	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
 	
 	// Special cases regarding operands as first input.
@@ -94,13 +74,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	// Parentheses
 	if (inputValue == '(') {
 		currentCalculation.push(new Calculation);
-	} /*else if (inputValue == ')') {
-		// Thanks to the endParenthesis variable in receive input, we're now targeting the outer calculation again.
-		// Although we need some kind of blank value to be entered into it which the system recognises purely as a
-		// marker that the previous calculation is done.
-		currentCalculation.push(')');
-		// Todo - Figure out how to close a parenthesis, and return to the outer calculation.
-	}*/
+	}
 }
 
 // Returns true if the input value is either a digit or '.'
@@ -150,7 +124,6 @@ Calculation.prototype.runCalculation = function() {
 		for (var i = 1; i < workingCalculationArray.length; i++) {
 			// Check if the object we're looking at is a parenthesis. If so, calculate it first.
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
-				console.log("gszfgz");
 				workingCalculationArray[i] = workingCalculationArray[i].runCalculation();
 			}
 			if (workingCalculationArray[i].constructor.name == "Operand") {
