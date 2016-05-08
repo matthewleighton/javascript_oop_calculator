@@ -355,5 +355,40 @@ QUnit.test("Can close a parenthesis and then perform an operand on it", function
 	testCalculator.receiveInput('*');
 	testCalculator.receiveInput('2');
 
+	assert.deepEqual(testCalculator.baseCalculation.calculationArray[1], new Operand('*'), "Second element of the base calculationArray is a multiplication operand");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 3, "baseCalculation calculationArray contains 3 elements");
 	assert.equal(testCalculator.calculateAll(), 4, "'(1+1)*2'=4");
+});
+
+QUnit.test("3*(1+2)=9", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.calculateAll(), 9);
+});
+
+QUnit.only("25-(6/3)*(1+1)=21", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('6');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.calculateAll(), 21);
 });
