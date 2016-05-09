@@ -2,12 +2,7 @@
 * Calculator Class
 **/
 function Calculator() {
-	
-	// An array of calculation objects. We're always targeting the last element.
-	// This array will have multiple elements when we have unclosed parenthasies.
 	this.baseCalculation = new Calculation;
-	
-	//this.openCalculations = [new Calculation];
 	this.validOperands = ['+', '-', '*', '/', '^'];
 }
 
@@ -19,13 +14,16 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 
 	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {	
 		// If the input was a closing parenthesis, we set the last calculation to 'closed', and return the 2nd from last calcualtion.
-		if (closeParenthesis &&
-			lastElement.calculationArray[lastElement.calculationArray.length-1] &&
-			!(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation"))
-		{
-			lastElement.isOpen = false;
-			return calculation;		
-		}
+		if (closeParenthesis && lastElement.calculationArray[lastElement.calculationArray.length-1]) {
+			console.log("Closing Parentheses - passed first");
+			if (!(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation") ||
+				(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation" &&
+				!(lastElement.calculationArray[lastElement.calculationArray.length-1].isOpen))) {
+				console.log("Closing parenthesis - CLOSED");
+				lastElement.isOpen = false;
+				return calculation;			
+			}
+		} 
 		return this.findInputTarget(lastElement, closeParenthesis, calculation);
 	}
 
@@ -109,8 +107,25 @@ function Calculation() {
 // Recursively solves parentheses as calculation objects of their own.
 Calculation.prototype.runCalculation = function() {
 	var workingCalculationArray = this.calculationArray;
-	console.log("workingCalculationArray: ");
-	console.log(workingCalculationArray);
+
+	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operand.
+	var i = 0;
+	while (i < workingCalculationArray.length) {
+		if (workingCalculationArray[i].constructor.name == "Calculation") {
+			if (workingCalculationArray[i-1] && !isNaN(workingCalculationArray[i-1])) {
+				workingCalculationArray.splice(i, 0, new Operand('*'));
+				i++;
+			}
+			if (workingCalculationArray[i+1] && (!isNaN(workingCalculationArray[i+1]) || workingCalculationArray[i+1].constructor.name == "Calculation")) {
+				workingCalculationArray.splice(i+1, 0, new Operand('*'));
+			}
+			if (workingCalculationArray[i].length == 1) {
+				console.log("Replacing parentheses with value");
+				workingCalculationArray[i] = workingCalculationArray[i].calculationArray[0];
+			}
+		}
+		i++;
+	}
 
 	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
 		// If the first element is a parenthesis, evaluate it first and replace it with its value.
@@ -126,6 +141,7 @@ Calculation.prototype.runCalculation = function() {
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
 				workingCalculationArray[i] = workingCalculationArray[i].runCalculation();
 			}
+
 			if (workingCalculationArray[i].constructor.name == "Operand") {
 				currentOperand = workingCalculationArray[i];
 			} else {
