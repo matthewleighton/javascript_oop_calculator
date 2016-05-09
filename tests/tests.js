@@ -705,3 +705,16 @@ QUnit.test("Correctly handles input of a negative number via parentheses: 10+(-3
 
 	assert.equal(testCalculator.calculateAll(), 7);
 });
+
+QUnit.test("Performing a calculation doesn't effect the calculationArray itself", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('1');
+
+	beforeCalculation = testCalculator.baseCalculation.calculationArray;
+	testCalculator.calculateAll();
+	afterCalculation = testCalculator.baseCalculation.calculationArray;
+	
+	assert.deepEqual(beforeCalculation, afterCalculation);
+});
