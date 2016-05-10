@@ -1,3 +1,81 @@
+/* Variables */
+
+$total-height: 420px;
+$total-width: 350px;
+
+$temp-light-green: #90EE90;
+$display-screen-background: #E9E9E9;
+$display-screen-text: #4D4D4D;
+$number-btn-color: #666666;
+$operation-btn-color: #848484;
+
 * {
+	font-family: 'Open Sans';
+}
+
+.no-select {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+}
+
+#calculator-body {
+	border-radius: 3px;
+	height: $total-height;
+	width: $total-width;
+}
+
+#screen {
+	background-color: $display-screen-background;
+	color: $display-screen-text;
+	height: (2/6)*$total-height;
+	width: $total-width;
+	
+}
+
+#output-display {
+	background-color: blue;
+}
+
+#input-display {
 	background-color: pink;
+}
+
+.btn {
+	@extend .no-select;
+	color: white;
+	cursor: pointer;
+	display: inline-block;
+	$btn-height: (4/6)*(1/4)*$total-height;
+	height: $btn-height;
+	line-height: $btn-height;
+	font-size: 35px;
+	text-align: center;
+	width: (2/5)*(1/2)*$total-width;
+}
+
+#number-btn-area, #operation-btn-area {
+	display: inline-block;
+	height: (4/6)*$total-height;
+}
+
+#number-btn-area {
+	border-radius: 0px 0px 0px 2px;
+
+	width: (3/5)*$total-width;
+}
+
+.number-btn {
+	background-color: $number-btn-color;
+}
+
+#operation-btn-area {
+	border-radius: 0px 0px 2px 0px;
+	float: right;
+	width: (2/5)*$total-width;
+}
+
+.operation-btn {
+	background-color: $operation-btn-color;
 }

@@ -23,14 +23,14 @@ QUnit.test("Calculator adds a second digit to a number", function(assert) {
 	assert.equal(testCalculator.baseCalculation.calculationArray[0], '12', "Adding a second digit appends it to the first");
 });
 
-QUnit.test("Inputting an operand after a digit is added as a new element to the calculationArray", function(assert) {
+QUnit.test("Inputting an operator after a digit is added as a new element to the calculationArray", function(assert) {
 	var testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('+');
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 2, "Calculation array contains two elements");
 	
-	var additionOperand = new Operand('+');
-	assert.deepEqual(testCalculator.baseCalculation.calculationArray[1], additionOperand, "Second element of calculationArray is an addition operand");
+	var additionOperator = new Operator('+');
+	assert.deepEqual(testCalculator.baseCalculation.calculationArray[1], additionOperator, "Second element of calculationArray is an addition operator");
 });
 
 //Calculation Object
@@ -46,13 +46,13 @@ QUnit.test("Calculation objects have an empty 'calculationArray' upon creation",
 });
 
 
-//Operand Object
-QUnit.test("The appropriate operand is added to the calculationArray when the corresponding symbol is inputted", function(assert) {
+//Operator Object
+QUnit.test("The appropriate operator is added to the calculationArray when the corresponding symbol is inputted", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('+');
-	var additionOperand = new Operand('+');
-	assert.propEqual(testCalculator.baseCalculation.calculationArray[1], additionOperand, "Last element of calculationArray is addition operand");
+	var additionOperator = new Operator('+');
+	assert.propEqual(testCalculator.baseCalculation.calculationArray[1], additionOperator, "Last element of calculationArray is addition operator");
 });
 
 
@@ -183,7 +183,7 @@ QUnit.test("Correctly prioritises exponents before multiplication: 2*3^2=18", fu
 	assert.equal(testCalculator.calculateAll(), '18');
 });
 
-QUnit.test("Correctly answers a calculation switching back and forth between different operands: 1+2^2*4/2+1=10", function(assert) {
+QUnit.test("Correctly answers a calculation switching back and forth between different operators: 1+2^2*4/2+1=10", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('+');
@@ -267,7 +267,7 @@ QUnit.test("Correctly handles a calculation resulting in a negative decimal: 0.5
 	assert.equal(testCalculator.calculateAll(), '-0.5');
 });
 
-QUnit.test("Ignore first input if inputValue is an operand", function(assert) {
+QUnit.test("Ignore first input if inputValue is an operator", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('+');
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "CalculationArray is empty after entering only a '+'");
@@ -275,10 +275,10 @@ QUnit.test("Ignore first input if inputValue is an operand", function(assert) {
 	testCalculator.receiveInput('*');
 	testCalculator.receiveInput('/');
 	testCalculator.receiveInput('^');
-	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "CalculationArray is empty after entering various operands");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "CalculationArray is empty after entering various operators");
 });
 
-QUnit.test("Usual performance still works after initially entering ignored operands as first input", function(assert) {
+QUnit.test("Usual performance still works after initially entering ignored operators as first input", function(assert) {
 	testCalculator = new Calculator;
 	
 	testCalculator.receiveInput('*');
@@ -289,8 +289,8 @@ QUnit.test("Usual performance still works after initially entering ignored opera
 	testCalculator.receiveInput('+');
 	testCalculator.receiveInput('1');
 
-	assert.equal(testCalculator.baseCalculation.calculationArray.length, 3, "CalculationArray only has 3 elements after entering '1+1' after invalid operands");
-	assert.equal(testCalculator.calculateAll(), '2', "Still provides a correct answer after initially recieving invalid operands");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 3, "CalculationArray only has 3 elements after entering '1+1' after invalid operators");
+	assert.equal(testCalculator.calculateAll(), '2', "Still provides a correct answer after initially recieving invalid operators");
 });
 
 
@@ -303,7 +303,7 @@ QUnit.test("Allows for input of negative number as first input", function(assert
 	assert.equal(testCalculator.baseCalculation.calculationArray[0], '-2', "First element of calculationArray is '-2'");
 });
 
-QUnit.test("Correctly handles multiple entries of operands including minus", function(assert) {
+QUnit.test("Correctly handles multiple entries of operators including minus", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('-');
 	testCalculator.receiveInput('+');
@@ -345,7 +345,7 @@ QUnit.test("Can complete calculations within a parenthesis", function(assert) {
 	assert.equal(testCalculator.calculateAll(), 2, "'(1+1'=2");
 });
 
-QUnit.test("Can close a parenthesis and then perform an operand on it", function(assert) {
+QUnit.test("Can close a parenthesis and then perform an operator on it", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('(');
 	testCalculator.receiveInput('1');
@@ -355,7 +355,7 @@ QUnit.test("Can close a parenthesis and then perform an operand on it", function
 	testCalculator.receiveInput('*');
 	testCalculator.receiveInput('2');
 
-	assert.deepEqual(testCalculator.baseCalculation.calculationArray[1], new Operand('*'), "Second element of the base calculationArray is a multiplication operand");
+	assert.deepEqual(testCalculator.baseCalculation.calculationArray[1], new Operator('*'), "Second element of the base calculationArray is a multiplication operator");
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 3, "baseCalculation calculationArray contains 3 elements");
 	assert.equal(testCalculator.calculateAll(), 4, "'(1+1)*2' = 4");
 });

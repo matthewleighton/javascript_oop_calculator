@@ -1,15 +1,10 @@
-$(document).ready(function() {
-	console.log("jQuery loaded");
-});
-
-
-
 /**
 * Calculator Class
 **/
 function Calculator() {
 	this.baseCalculation = new Calculation;
-	this.validOperands = ['+', '-', '*', '/', '^'];
+	this.screen = new Screen;
+	this.validOperators = ['+', '-', '*', '/', '^'];
 }
 
 // Returns the calculation object which the inputted values should be entered into.
@@ -36,7 +31,7 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 	return calculation;
 }
 
-// Add either a digit or operand onto the current operation.
+// Add either a digit or operator onto the current operation.
 Calculator.prototype.receiveInput = function(inputValue) {
 	console.log("---receiveInput---");
 
@@ -44,8 +39,8 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
 	
-	// Special cases regarding operands as first input.
-	if (currentCalculation.length == 0 && this.isValidOperand(inputValue)) {
+	// Special cases regarding operators as first input.
+	if (currentCalculation.length == 0 && this.isValidOperator(inputValue)) {
 		if (inputValue == '-') {
 			currentCalculation.push(inputValue);
 		}
@@ -53,7 +48,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	}
 
 	// Special case for using a negative number as first input.
-	// Addition causes the calculation to be cleared, while all other operands are ignored.
+	// Addition causes the calculation to be cleared, while all other operators are ignored.
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
@@ -70,9 +65,9 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		else {
 			currentCalculation.push(inputValue);
 		}
-	// Check if the input is an operand.
-	} else if (this.isValidOperand(inputValue)) {
-		currentCalculation.push(new Operand(inputValue));
+	// Check if the input is an operator.
+	} else if (this.isValidOperator(inputValue)) {
+		currentCalculation.push(new Operator(inputValue));
 	}
 
 	// Parentheses
@@ -86,9 +81,9 @@ Calculator.prototype.isValidDigit = function(inputValue) {
 	return (!isNaN(inputValue) || inputValue == '.') ? true : false;
 }
 
-// Returns true if the input value is an operand
-Calculator.prototype.isValidOperand = function(inputValue) {
-	return (this.validOperands.indexOf(inputValue) >= 0) ? true : false;
+// Returns true if the input value is an operator.
+Calculator.prototype.isValidOperator = function(inputValue) {
+	return (this.validOperators.indexOf(inputValue) >= 0) ? true : false;
 }
 
 // Performs all calculations, including inner parentheses, and returns the answer.
@@ -100,7 +95,7 @@ Calculator.prototype.calculateAll = function() {
 * Calculation Class
 **/
 function Calculation() {
-	// An array to store the numbers and operands making up the calculation.
+	// An array to store the numbers and operators making up the calculation.
 	this.calculationArray = [];
 
 	// Specifies whether the parentheses of this calculation are open or have been closed.
@@ -117,16 +112,16 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 		workingCalculationArray = $.extend([], workingCalculationArray.calculationArray);
 	}
 
-	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operand.
+	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operator.
 	var i = 0;
 	while (i < workingCalculationArray.length) {
 		if (workingCalculationArray[i].constructor.name == "Calculation") {
 			if (workingCalculationArray[i-1] && !isNaN(workingCalculationArray[i-1])) {
-				workingCalculationArray.splice(i, 0, new Operand('*'));
+				workingCalculationArray.splice(i, 0, new Operator('*'));
 				i++;
 			}
 			if (workingCalculationArray[i+1] && (!isNaN(workingCalculationArray[i+1]) || workingCalculationArray[i+1].constructor.name == "Calculation")) {
-				workingCalculationArray.splice(i+1, 0, new Operand('*'));
+				workingCalculationArray.splice(i+1, 0, new Operator('*'));
 			}
 			if (workingCalculationArray[i].length == 1) {
 				workingCalculationArray[i] = workingCalculationArray[i].calculationArray[0];
@@ -143,7 +138,7 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 		}
 		
 		var memory = parseFloat(workingCalculationArray[0]);
-		var currentOperand;
+		var currentOperator;
 		
 		for (var i = 1; i < workingCalculationArray.length; i++) {
 			// Check if the object we're looking at is a parenthesis. If so, calculate it first.
@@ -151,14 +146,14 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 				workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i]);
 			}
 
-			if (workingCalculationArray[i].constructor.name == "Operand") {
-				currentOperand = workingCalculationArray[i];
+			if (workingCalculationArray[i].constructor.name == "Operator") {
+				currentOperator = workingCalculationArray[i];
 			} else {
-				// Check if the following operand takes priority by order of operations.
-				if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperand.priority) {
+				// Check if the following operator takes priority by order of operations.
+				if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
 					memory = parseFloat(workingCalculationArray[i]);
 				} else {
-					workingCalculationArray[i] = currentOperand.performOperation(memory, workingCalculationArray[i]);
+					workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
 					memory = workingCalculationArray[i];
 					workingCalculationArray[i-1] = null;
 					workingCalculationArray[i-2] = null;
@@ -174,9 +169,9 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 }
 
 /**
-* Operand Class
+* Operator Class
 **/
-function Operand(symbol) {
+function Operator(symbol) {
 	switch (symbol) {
 		case '+':
 			this.priority = 1;
@@ -207,11 +202,86 @@ function Operand(symbol) {
 			this.performOperation = function(a, b) {
 				return Math.pow(a, b);
 			}
+			break;
 	}
 }
 
 /**
-* Other Functions
+* Screen Class
 **/
 
+function Screen() {
+	this.inputDisplay = '';
+	this.outputDisplay = '';
+}
+
+Screen.prototype.clearInputDislay = function() {
+	
+	this.inputDisplay = '';
+	$('#input-display').text('');
+}
+
+Screen.prototype.updateInputDisplay = function(value) {
+	this.inputDisplay += value;
+	$('#input-display').text(this.inputDisplay);
+}
+
+Screen.prototype.clearOutputDisplay = function() {
+	this.outputDisplay = '';
+	$('#output-display').text('');
+}
+
+Screen.prototype.updateOutputDisplay = function(value) {
+	this.outputDisplay = value;
+	$('#output-display').text(value);
+}
+
+
+
+
+
+
 var calculator = new Calculator();
+
+/**
+* User Interaction
+**/
+
+$(document).ready(function() {
+	
+	
+	// Buttons change color on mouse hover.
+	$('.btn').mouseenter(function() {
+		var originalBtnColor = $(this).css('background-color');
+		$(this).css('background-color', 'd3d3d3');
+		$(this).css('color', originalBtnColor);
+		$(this).mouseleave(function() {
+			$(this).css('background-color', originalBtnColor);
+			$(this).css('color', 'white');
+		});
+	});
+
+	$('.btn').mousedown(function() {
+		var btnValue = $(this).text().trim();
+		console.log("btnValue = " + btnValue);
+		if (btnValue == '=') {
+			var answer = calculator.calculateAll();
+			calculator.screen.updateOutputDisplay(answer);
+		} else if (btnValue == 'CE') {
+			calculator.baseCalculation.calculationArray = [];
+			calculator.screen.clearInputDislay();
+			calculator.screen.clearOutputDisplay();
+		} else {
+			calculator.receiveInput(btnValue);
+			calculator.screen.updateInputDisplay(btnValue);
+			//var currentAnswer = calculator.calculateAll();
+			//console.log("Current answer is" + currentAnswer);
+			//calculator.screen.updateOutputDisplay(currentAnswer);
+		}
+	});
+
+	//function clearInputScreen()
+
+
+});
+
