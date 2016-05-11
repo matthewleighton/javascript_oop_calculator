@@ -104,12 +104,46 @@ function Calculation() {
 	this.isOpen = true;
 }
 
+// Removes trailing operations (e.g. '1+1+') from the workingCalculationArray, ensuring the program won't fail trying to calculate them.
+Calculation.prototype.ignoreTrailingOperations = function(calculation) {
+	var lastElement = calculation[calculation.length-1];
+
+	if (lastElement && !isNaN(lastElement)) {
+		return calculation;
+	} else if (lastElement && lastElement.constructor.name == "Operator" || lastElement == '-') {
+		calculation.pop();
+		return calculation;
+	} else if (lastElement && lastElement.constructor.name == "Calculation") {
+		calculation[calculation.length-1].calculationArray = this.ignoreTrailingOperations(lastElement.calculationArray);
+		if (!lastElement.calculationArray.length > 0) {
+			calculation.pop();
+			return this.ignoreTrailingOperations(calculation);
+		}
+		return calculation;
+	}
+
+	return calculation;
+}
+
 // Returns the answer of this calculation.
 // Recursively solves parentheses as calculation objects of their own.
 Calculation.prototype.runCalculation = function(workingCalculationArray) {
 	// Create a copy of the calculationArray if necessary, to ensure we're not altering the original array.
 	if (workingCalculationArray.constructor.name == "Calculation") {
 		workingCalculationArray = $.extend([], workingCalculationArray.calculationArray);
+	}
+
+	console.log("Before removing operations, calculation is...");
+	console.log(workingCalculationArray);
+
+	//
+	workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
+
+	console.log("After removing operations, calculation is...");
+	console.log(workingCalculationArray);
+
+	if (workingCalculationArray.length == 0) {
+		return 0;
 	}
 
 	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operator.
