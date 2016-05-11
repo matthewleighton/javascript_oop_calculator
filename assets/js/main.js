@@ -1,3 +1,5 @@
+// Todo - Implement some kind of rounding, to avoid gettings irrational results.
+
 /**
 * Calculator Class
 **/
@@ -22,6 +24,7 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 				(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation" &&
 				!(lastElement.calculationArray[lastElement.calculationArray.length-1].isOpen))) {
 				lastElement.isOpen = false;
+				this.screen.closeParenthesis();
 				return calculation;			
 			}
 		} 
@@ -31,9 +34,11 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 	return calculation;
 }
 
+// Recieve an input from the user, and 
 // Add either a digit or operator onto the current operation.
 Calculator.prototype.receiveInput = function(inputValue) {
 	console.log("---receiveInput---");
+	console.log(this.baseCalculation);
 
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
@@ -42,7 +47,9 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	// Special cases regarding operators as first input.
 	if (currentCalculation.length == 0 && this.isValidOperator(inputValue)) {
 		if (inputValue == '-') {
-			currentCalculation.push(inputValue);
+			this.pushInput(currentCalculation, inputValue, inputValue);
+			//currentCalculation.push(inputValue);
+			//this.screen.updateInputDisplay(inputValue);
 		}
 		return;
 	}
@@ -52,6 +59,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
+			this.screen.clearInputDislay();
 		}
 		return;
 	}
@@ -60,19 +68,48 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	if (!isNaN(inputValue) || inputValue == '.') {
 		// Check if the previous input was also a digit.
 		if (!isNaN(lastInput) || lastInput == '.' || currentCalculation[0] == '-') {
-			currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
+			//currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
+			this.pushInput(currentCalculation, inputValue, inputValue, true);
 		}
 		else {
-			currentCalculation.push(inputValue);
+			//currentCalculation.push(inputValue);
+			this.pushInput(currentCalculation, inputValue, inputValue);
 		}
 	// Check if the input is an operator.
 	} else if (this.isValidOperator(inputValue)) {
-		currentCalculation.push(new Operator(inputValue));
+		//currentCalculation.push(new Operator(inputValue));
+		this.pushInput(currentCalculation, new Operator(inputValue), inputValue);
 	}
 
 	// Parentheses
 	if (inputValue == '(') {
-		currentCalculation.push(new Calculation);
+		//currentCalculation.push(new Calculation);
+		this.pushInput(currentCalculation, new Calculation, '(');
+	}
+
+	//this.screen.updateInputDisplay(inputValue);
+}
+
+// Pushes input to the calculation array, adds it to the input screen, and displays the current answer on the output screen.
+// AppendDigit toggles whether the input is a digit being added to the end of a current number.
+Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, appendingDigit = false) {
+	if (appendingDigit) {
+		var lastDigit = calculation[calculation.length-1];
+		calculation[calculation.length-1] = lastDigit + pushValue;
+	} else {
+		calculation.push(pushValue);
+	}
+
+	if (displayValue == '(') {
+		this.screen.openNewParenthesis();
+	}
+
+	
+	this.screen.updateInputDisplay(displayValue);	
+	
+	if (!isNaN(pushValue)) {
+		var currentAnswer = this.calculateAll();
+		this.screen.updateOutputDisplay(currentAnswer);
 	}
 }
 
@@ -100,20 +137,24 @@ function Calculation() {
 
 	// Specifies whether the parentheses of this calculation are open or have been closed.
 	// This will be set to false when the user enters a ')', signaling the calculator to
-	// ignore it while chosing an input target.
+	// ignore the calculation while chosing an input target.
 	this.isOpen = true;
 }
 
 // Removes trailing operations (e.g. '1+1+') from the workingCalculationArray, ensuring the program won't fail trying to calculate them.
 Calculation.prototype.ignoreTrailingOperations = function(calculation) {
 	var lastElement = calculation[calculation.length-1];
-
+	console.log("HELLO?");
+	console.log(lastElement);
 	if (lastElement && !isNaN(lastElement)) {
 		return calculation;
 	} else if (lastElement && lastElement.constructor.name == "Operator" || lastElement == '-') {
+		console.log("Removing trailing operator!!!");
 		calculation.pop();
 		return calculation;
 	} else if (lastElement && lastElement.constructor.name == "Calculation") {
+		console.log("ignoreTrailingOperations() - calculation");
+		//var newCalculation = $.extend([], )
 		calculation[calculation.length-1].calculationArray = this.ignoreTrailingOperations(lastElement.calculationArray);
 		if (!lastElement.calculationArray.length > 0) {
 			calculation.pop();
@@ -122,6 +163,8 @@ Calculation.prototype.ignoreTrailingOperations = function(calculation) {
 		return calculation;
 	}
 
+	console.log("Nothing triggered in ignoreTrailingOperations");
+
 	return calculation;
 }
 
@@ -129,15 +172,15 @@ Calculation.prototype.ignoreTrailingOperations = function(calculation) {
 // Recursively solves parentheses as calculation objects of their own.
 Calculation.prototype.runCalculation = function(workingCalculationArray) {
 	// Create a copy of the calculationArray if necessary, to ensure we're not altering the original array.
-	if (workingCalculationArray.constructor.name == "Calculation") {
-		workingCalculationArray = $.extend([], workingCalculationArray.calculationArray);
-	}
+	//if (workingCalculationArray.constructor.name == "Calculation") {
+		var workingCalculationArray = $.extend([], workingCalculationArray.calculationArray);
+	//}
 
 	console.log("Before removing operations, calculation is...");
 	console.log(workingCalculationArray);
 
 	//
-	workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
+	var workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
 
 	console.log("After removing operations, calculation is...");
 	console.log(workingCalculationArray);
@@ -247,10 +290,13 @@ function Operator(symbol) {
 function Screen() {
 	this.inputDisplay = '';
 	this.outputDisplay = '';
+
+	// A string of ')'s to be faintly desplayed after the inputDisplay,
+	// representing the number of currently open parentheses.
+	this.openParentheses = '';
 }
 
 Screen.prototype.clearInputDislay = function() {
-	
 	this.inputDisplay = '';
 	$('#input-display').text('');
 }
@@ -268,6 +314,17 @@ Screen.prototype.clearOutputDisplay = function() {
 Screen.prototype.updateOutputDisplay = function(value) {
 	this.outputDisplay = value;
 	$('#output-display').text(value);
+}
+
+Screen.prototype.openNewParenthesis = function() {
+	this.openParentheses += ')';
+	$('#open-parentheses').text(this.openParentheses);
+}
+
+Screen.prototype.closeParenthesis = function() {
+	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
+	var currentInput = $('#input-display').text;
+	$('#input-display').text(currentInput + ')');
 }
 
 
@@ -307,10 +364,12 @@ $(document).ready(function() {
 			calculator.screen.clearOutputDisplay();
 		} else {
 			calculator.receiveInput(btnValue);
-			calculator.screen.updateInputDisplay(btnValue);
+			//calculator.screen.updateInputDisplay(btnValue);
 			//var currentAnswer = calculator.calculateAll();
-			//console.log("Current answer is" + currentAnswer);
-			//calculator.screen.updateOutputDisplay(currentAnswer);
+			//console.log("Answer is " + currentAnswer);
+			//if (currentAnswer !== calculator.baseCalculation.calculationArray[0]) {
+			//	calculator.screen.updateOutputDisplay(currentAnswer);
+			//}
 		}
 	});
 

@@ -17,13 +17,17 @@
   background-color: #E9E9E9;
   color: #4D4D4D;
   height: 140px;
+  overflow: hidden;
   width: 350px; }
-
-#output-display {
-  background-color: blue; }
+  #screen div {
+    float: right;
+    padding: 5px 10px 5px 10px; }
 
 #input-display {
-  background-color: pink; }
+  font-size: 40px; }
+
+#output-display {
+  font-size: 30px; }
 
 .btn {
   color: white;

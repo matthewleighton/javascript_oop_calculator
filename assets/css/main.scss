@@ -30,16 +30,20 @@ $operation-btn-color: #848484;
 	background-color: $display-screen-background;
 	color: $display-screen-text;
 	height: (2/6)*$total-height;
+	overflow: hidden;
 	width: $total-width;
-	
-}
-
-#output-display {
-	background-color: blue;
+	div {
+		float: right;
+		padding: 5px 10px 5px 10px;
+	}
 }
 
 #input-display {
-	background-color: pink;
+	font-size: 40px;
+}
+
+#output-display {
+	font-size: 30px;
 }
 
 .btn {

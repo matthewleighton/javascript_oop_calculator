@@ -9,8 +9,7 @@
 <div id='calculator-body'>
 	<div id='screen'>
 		<div id='input-display'>
-
-		</div>
+		</div><span id='open-parentheses'></span><br><br><br>
 		<div id='output-display'>
 		</div>
 		</div>

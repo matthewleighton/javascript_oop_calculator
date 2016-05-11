@@ -799,3 +799,23 @@ QUnit.test("2+3() = 5", function(assert) {
 
 	assert.equal(testCalculator.calculateAll(), 5);
 });
+
+//Screen tests
+
+QUnit.test("Invalid inputs such as opening with operands/closing an empty parenthesis are not added to the input display", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.screen.inputDisplay, '(');	
+});
+
+QUnit.test("The output display is automatically updated as new inputs are entered", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('3');
+	assert.equal(testCalculator.screen.inputDisplay, '2+3', "Input display is '2+3'");
+	assert.equal(testCalculator.screen.outputDisplay, '5');
+});
