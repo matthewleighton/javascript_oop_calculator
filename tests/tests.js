@@ -10,7 +10,7 @@ QUnit.test("Calculator object created on startup", function( assert ) {
 
 QUnit.test("Calculator adds first digit input to empty calculation", function(assert) {
 	var testCalculator = new Calculator;
-	assert.deepEqual(testCalculator.baseCalculation, new Calculation, "current calculation array is initially empty");
+	assert.deepEqual(testCalculator.baseCalculation, new Calculation(true), "current calculation array is initially empty");
 
 	testCalculator.receiveInput('1');
 	assert.equal(testCalculator.baseCalculation.calculationArray[0], '1', "After inputting '1', calculation array contains '1'");
@@ -36,7 +36,7 @@ QUnit.test("Inputting an operator after a digit is added as a new element to the
 //Calculation Object
 QUnit.test("Calculation object is added to calculator openCalculations array on calculator creation", function(assert) {
 	testCalculator = new Calculator;
-	testCalculation = new Calculation;
+	testCalculation = new Calculation(true);
 	assert.deepEqual(calculator.baseCalculation, testCalculation, "calculation object is in inputTarget array");
 });
 
@@ -899,4 +899,60 @@ QUnit.test("Numbers starting in 0 (e.g. 0123) are also impossible to enter after
 
 	assert.equal(testCalculator.baseCalculation.calculationArray[2], '23', "Third element of calculationArray is 23");
 	assert.equal(testCalculator.calculateAll(), '24', "Calculation evaluates to 24");	
+});
+
+QUnit.test("Inputting 'c' removes the previous input", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.removePreviousInput();
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "Calculation array contains no elements");
+});
+
+QUnit.test("c will remove an empty array, but cannot remove the initial base array", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('(');
+	testCalculator.removePreviousInput();
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "After entering c the base calculation array is empty");
+
+	testCalculator.removePreviousInput();
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "After entering c again noting has changed");
+	assert.equal(testCalculator.screen.inputDisplay, '', "Input display is empty");
+	assert.equal(testCalculator.screen.openParentheses, '', "There are 0 open calculations remaining after using c");
+});
+
+QUnit.test("c successfully removes the last digit of a multi-digit number", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('3');
+	testCalculator.removePreviousInput();
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '12', "Calculation array contains '12'");
+	assert.equal(testCalculator.calculateAll(), '12', "Calculation evaluates to 12");
+});
+
+QUnit.test("c successfully removes the last digit of a single digit number", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.removePreviousInput();
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, '2', "Calculation array contains 2 elements");
+	assert.equal(testCalculator.calculateAll(), '1', "Calculation evaluates to 1");
+	assert.equal(testCalculator.screen.outputDisplay, '1', "Output screen displays 1");
+});
+
+QUnit.test("c successfully removes an operator", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.removePreviousInput();
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, '1', "Calculation array contains 1 element");
+	assert.equal(testCalculator.calculateAll(), '12', "Calculation evaluates to 12");
+	assert.equal(testCalculator.screen.outputDisplay, '12', "Output screen displays 12");
 });

@@ -4,7 +4,7 @@
 * Calculator Class
 **/
 function Calculator() {
-	this.baseCalculation = new Calculation;
+	this.baseCalculation = new Calculation(true);
 	this.screen = new Screen;
 	this.validOperators = ['+', '-', '*', '/', '^'];
 }
@@ -47,8 +47,6 @@ Calculator.prototype.receiveInput = function(inputValue) {
 
 	if (!isNaN(lastElement)) {
 		var lastInput = lastElement.slice(-1);
-	} else {
-
 	}
 	
 	// Special cases regarding operators as first input.
@@ -64,7 +62,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
-			this.screen.replaceOperator('');
+			this.screen.replaceLastCharacter('');
 		}
 		return;
 	}
@@ -76,7 +74,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		currentCalculation[currentCalculation.length-1].constructor.name == "Operator" &&
 		calculator.isValidOperator(inputValue)) {
 			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
-			calculator.screen.replaceOperator(inputValue);
+			calculator.screen.replaceLastCharacter(inputValue);
 			return;
 	}
 
@@ -99,12 +97,11 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		if (lastElement == '0') {
 			currentCalculation.pop();
 			console.log(currentCalculation);
-			this.screen.replaceOperator('');
+			this.screen.replaceLastCharacter('');
 			lastElement = currentCalculation[currentCalculation.length-1];
 		}
 		if (!isNaN(lastElement) || lastInput == '.' || currentCalculation[0] == '-') {
 			this.pushInput(currentCalculation, inputValue, inputValue, true);
-			console.log("DO WE GET HERE?");
 		} else {
 			this.pushInput(currentCalculation, inputValue, inputValue);
 		}
@@ -112,7 +109,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	} else if (this.isValidOperator(inputValue)) {
 		if (lastInput == '.') {
 			currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
-			this.screen.replaceOperator('');
+			this.screen.replaceLastCharacter('');
 		}
 		this.pushInput(currentCalculation, new Operator(inputValue), inputValue);
 	}
@@ -141,10 +138,45 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 	this.screen.updateInputDisplay(displayValue);	
 	
 	if (!isNaN(pushValue)) {
-		var currentAnswer = this.calculateAll();
-		this.screen.updateOutputDisplay(currentAnswer);
+		this.calculateAll();
+		//this.screen.updateOutputDisplay(currentAnswer);
 	}
 }
+
+// Remove the user's previous input via the 'C' button.
+Calculator.prototype.removePreviousInput = function() {
+	var currentCalculation = this.findInputTarget(this.baseCalculation);
+
+	// Check if the current calculation is empty. Only remove if it is NOT the base calculation.
+	if (currentCalculation.calculationArray.length == 0) {
+		if (!currentCalculation.isBaseCalculation) {
+			currentCalculation.isOpen = false;
+			var outerCalculation = this.findInputTarget(this.baseCalculation).calculationArray;
+			outerCalculation.pop();
+			this.screen.removeParenthesis();
+			//this.screen.closeParenthesis();
+		}
+		return;
+	}
+
+	currentCalculation = currentCalculation.calculationArray;
+	var lastElement = currentCalculation[currentCalculation.length-1];
+	var lastInput = '';
+	if (!isNaN(lastElement)) {
+		currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
+		this.screen.replaceLastCharacter('');
+		console.log("DO WE GET HERE>?>>>>???");
+		if (currentCalculation[currentCalculation.length-1].length == 0) {
+			currentCalculation.pop();
+		}
+	} else {
+		currentCalculation.pop();
+		this.screen.replaceLastCharacter('');
+	}
+	this.calculateAll();
+	return;	
+}
+
 
 // Returns true if the input value is either a digit or '.'
 Calculator.prototype.isValidDigit = function(inputValue) {
@@ -158,13 +190,15 @@ Calculator.prototype.isValidOperator = function(inputValue) {
 
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
-	return this.baseCalculation.runCalculation(this.baseCalculation);
+	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation);
+	this.screen.updateOutputDisplay(currentAnswer);
+	return currentAnswer;
 }
 
 /**
 * Calculation Class
 **/
-function Calculation() {
+function Calculation(base = false) {
 	// An array to store the numbers and operators making up the calculation.
 	this.calculationArray = [];
 
@@ -172,6 +206,9 @@ function Calculation() {
 	// This will be set to false when the user enters a ')', signaling the calculator to
 	// ignore the calculation while chosing an input target.
 	this.isOpen = true;
+
+	// Ensures that the base calculation cannot be deleted.
+	this.isBaseCalculation = base;
 }
 
 // Removes trailing operations (e.g. '1+1+') from the workingCalculationArray, ensuring the program won't fail trying to calculate them.
@@ -371,6 +408,12 @@ Screen.prototype.closeParenthesis = function() {
 	}
 }
 
+Screen.prototype.removeParenthesis = function() {
+	this.replaceLastCharacter('');
+	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
+	$('#open-parentheses').text(this.openParentheses);
+}
+
 Screen.prototype.clearScreen = function() {
 	calculator.screen.clearInputDislay();
 	calculator.screen.clearOutputDisplay();
@@ -381,7 +424,7 @@ Screen.prototype.clearScreen = function() {
 }
 
 // Replace the last character of the input display. For use when user changes mind about which operator to use.
-Screen.prototype.replaceOperator = function(newOperator) {
+Screen.prototype.replaceLastCharacter = function(newOperator) {
 	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
 	this.inputDisplay += newOperator;
 	$('#input-display').text(this.inputDisplay);
@@ -401,7 +444,6 @@ Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
 	console.log("Pressed a button");
 
 	if (inputMethod == 'keyboard') {
-		//btn = document.getElementById('#btn' )
 		btn = $('#btn-' + btn);
 	}
 	console.log(btn);
@@ -415,7 +457,6 @@ Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
 		});
 	} else {
 		$(document).keyup(function() {
-			console.log("QWERRTERTWERWEQEQWE");
 			calculator.buttonPressUp(btn, originalBtnColor);
 		});
 	}
@@ -438,10 +479,11 @@ $(document).ready(function() {
 		var btnValue = $(this).text().trim();
 		console.log("btnValue = " + btnValue);
 		if (btnValue == '=') {
-			var answer = calculator.calculateAll();
-			calculator.screen.updateOutputDisplay(answer);
+			calculator.calculateAll();
+			//calculator.screen.updateOutputDisplay(answer);
 		} else if (btnValue == 'C') {
-			calculator.screen.clearScreen();
+			//calculator.screen.clearScreen();
+			calculator.removePreviousInput();
 		} else {
 			calculator.receiveInput(btnValue);
 		}
@@ -503,11 +545,12 @@ $(document).ready(function() {
 			calculator.receiveInput(keyValue);
 			keyId = keyId == '' ? keyValue : keyId;
 		} else if (keyCode == 13 || keyCode == 187) {
-			var answer = calculator.calculateAll();
-			calculator.screen.updateOutputDisplay(answer);
+			calculator.calculateAll();
+			//calculator.screen.updateOutputDisplay(answer);
 			var keyId = 'equals';
 		} else if (keyCode == 67 || keyCode == 8 || keyCode == 46) {
-			calculator.screen.clearScreen();
+			calculator.removePreviousInput();
+			//calculator.screen.clearScreen();
 			var keyId = 'c';
 		}
 
