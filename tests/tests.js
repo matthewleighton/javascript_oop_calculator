@@ -868,12 +868,35 @@ QUnit.test("Decimal points cannot be added multiple times at the start of a calc
 	assert.equal(testCalculator.calculateAll(), 0, "The calculation equals 0");
 });
 
-QUnit.only("If a decimal point is added to a number, but an operator is then inputted before and extra digits, the decimal point will be removed", function(assert) {
+QUnit.test("If a decimal point is added to a number, but an operator is then inputted before and extra digits, the decimal point will be removed", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('.');
 	testCalculator.receiveInput('+');
 
-	assert.equal(testCalculator.baseCalculation.calculationArray[0], '0', "First element of array is '0'");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 2, "calculationArray contains two elements");
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '1', "First element of array is '1'");
 	assert.equal(testCalculator.screen.inputDisplay, '1+', "Input display shows '1+'");
+});
+
+QUnit.test("Inputting a 0 at the start of a number, followed by another digit, will remove the 0", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '12', "CalculationArray contains '12'");
+	assert.equal(testCalculator.calculateAll(), '12', "Calculation evaluates to 12");
+});
+
+QUnit.test("Numbers starting in 0 (e.g. 0123) are also impossible to enter after operations", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('3');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[2], '23', "Third element of calculationArray is 23");
+	assert.equal(testCalculator.calculateAll(), '24', "Calculation evaluates to 24");	
 });

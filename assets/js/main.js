@@ -42,10 +42,13 @@ Calculator.prototype.receiveInput = function(inputValue) {
 
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
-	var lastInput = currentCalculation[currentCalculation.length-1];
+	var lastElement = currentCalculation[currentCalculation.length-1];
+	var lastInput = '';
 
-	if (!isNaN(lastInput)) {
-		lastInput = lastInput.slice(-1);
+	if (!isNaN(lastElement)) {
+		var lastInput = lastElement.slice(-1);
+	} else {
+
 	}
 	
 	// Special cases regarding operators as first input.
@@ -79,11 +82,11 @@ Calculator.prototype.receiveInput = function(inputValue) {
 
 	// Handle decimal point inputs.
 	if (inputValue == '.') {
-		console.log("Last Input was" + lastInput);
-		if (lastInput == '.') {
+		console.log("Last element was" + lastElement);
+		if (!isNaN(lastElement) && lastElement.indexOf('.') != -1) {
 			console.log("Last input was . - returning");
 			return;
-		} else if (currentCalculation.length < 1) {
+		} else if (currentCalculation.length < 1 || lastElement.constructor.name == 'Operator') {
 			this.pushInput(currentCalculation, '0', '0');
 		}
 
@@ -91,30 +94,33 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		return;
 	}
 
-	// Check if the input is a digit.
+	// Handle input of digits.
 	if (!isNaN(inputValue)) {
-		// Check if the previous input was also a digit.
-		if (!isNaN(lastInput) || lastInput == '.' || currentCalculation[0] == '-') {
-			//currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
-			this.pushInput(currentCalculation, inputValue, inputValue, true);
+		if (lastElement == '0') {
+			currentCalculation.pop();
+			console.log(currentCalculation);
+			this.screen.replaceOperator('');
+			lastElement = currentCalculation[currentCalculation.length-1];
 		}
-		else {
-			//currentCalculation.push(inputValue);
+		if (!isNaN(lastElement) || lastInput == '.' || currentCalculation[0] == '-') {
+			this.pushInput(currentCalculation, inputValue, inputValue, true);
+			console.log("DO WE GET HERE?");
+		} else {
 			this.pushInput(currentCalculation, inputValue, inputValue);
 		}
-	// Check if the input is an operator.
+	// Handle input of operators.
 	} else if (this.isValidOperator(inputValue)) {
-		//currentCalculation.push(new Operator(inputValue));
+		if (lastInput == '.') {
+			currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
+			this.screen.replaceOperator('');
+		}
 		this.pushInput(currentCalculation, new Operator(inputValue), inputValue);
 	}
 
-	// Parentheses
+	// Handle input of open parenthesis.
 	if (inputValue == '(') {
-		//currentCalculation.push(new Calculation);
 		this.pushInput(currentCalculation, new Calculation, '(');
 	}
-
-	//this.screen.updateInputDisplay(inputValue);
 }
 
 // Pushes input to the calculation array, adds it to the input screen, and displays the current answer on the output screen.
@@ -426,18 +432,7 @@ $(document).ready(function() {
 	$('.btn').mouseenter(function() {
 		calculator.buttonHighlightOn(this, 'mouse');
 	});
-/*
-	// Buttons change color on mouse hover.
-	$('.btn').mouseenter(function() {
-		var originalBtnColor = $(this).css('background-color');
-		$(this).css('background-color', 'd3d3d3');
-		$(this).css('color', originalBtnColor);
-		$(this).mouseleave(function() {
-			$(this).css('background-color', originalBtnColor);
-			$(this).css('color', 'white');
-		});
-	});
-*/
+
 	// Handle mouse clicks 
 	$('.btn').mousedown(function() {
 		var btnValue = $(this).text().trim();
