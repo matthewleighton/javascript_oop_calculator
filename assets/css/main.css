@@ -26,6 +26,12 @@
 #input-display {
   font-size: 40px; }
 
+#open-parentheses {
+  color: #B5B5B5;
+  float: right;
+  font-size: 40px;
+  padding: 5px 0px 5px 0px; }
+
 #output-display {
   font-size: 30px; }
 

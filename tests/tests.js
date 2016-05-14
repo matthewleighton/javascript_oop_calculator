@@ -819,3 +819,34 @@ QUnit.test("The output display is automatically updated as new inputs are entere
 	assert.equal(testCalculator.screen.inputDisplay, '2+3', "Input display is '2+3'");
 	assert.equal(testCalculator.screen.outputDisplay, '5');
 });
+
+QUnit.test("5+-2 = 3", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 3, "Calculaiton array contains 3 elements");
+	assert.equal(testCalculator.baseCalculation.calculationArray[2], '2', "Element [2] is a '2'");
+	assert.equal(testCalculator.calculateAll(), 3);
+});
+
+QUnit.test("The calculation array remains unchanged after calculating", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('4');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 8, "Calculation array contains 8 elements");
+	assert.equal(testCalculator.calculateAll(), 14);
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 8, "Calculation array still contains 8 elements");
+});
+

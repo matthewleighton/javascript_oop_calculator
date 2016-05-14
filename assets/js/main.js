@@ -40,6 +40,9 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	console.log("---receiveInput---");
 	console.log(this.baseCalculation);
 
+	// Todo - If the user changes their current operator, the operator on the input display should change,
+	// rather than simply appending the new operator as it currently does.
+
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
@@ -59,9 +62,20 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
-			this.screen.clearInputDislay();
+			this.screen.replaceOperator('');
 		}
 		return;
+	}
+
+	// If both the previous and current inputs are operators, replace the previous operator with the new one.
+	// Todo - refactor/tidy this?
+	if (isNaN(inputValue) &&
+		currentCalculation.length > 0 &&
+		currentCalculation[currentCalculation.length-1].constructor.name == "Operator" &&
+		calculator.isValidOperator(inputValue)) {
+			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
+			calculator.screen.replaceOperator(inputValue);
+			return;
 	}
 
 	// Check if the input is a digit.
@@ -180,7 +194,7 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 	console.log(workingCalculationArray);
 
 	//
-	var workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
+	workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
 
 	console.log("After removing operations, calculation is...");
 	console.log(workingCalculationArray);
@@ -255,30 +269,35 @@ function Operator(symbol) {
 			this.performOperation = function(a, b) {
 				return parseFloat(a) + parseFloat(b);
 			}
+			this.operatorName = '+';
 			break;
 		case '-':
 			this.priority = 1;
 			this.performOperation = function(a, b) {
 				return parseFloat(a) - parseFloat(b);
 			}
+			this.operatorName = '-';
 			break;
 		case '*':
 			this.priority = 2;
 			this.performOperation = function(a, b) {
 				return parseFloat(a) * parseFloat(b);
 			}
+			this.operatorName = '*';
 			break;
 		case '/':
 			this.priority = 2;
 			this.performOperation = function(a, b) {
 				return parseFloat(a) / parseFloat(b);
 			}
+			this.operatorName = '/';
 			break;
 		case '^':
 			this.priority = 3;
 			this.performOperation = function(a, b) {
 				return Math.pow(a, b);
 			}
+			this.operatorName = '^';
 			break;
 	}
 }
@@ -319,15 +338,35 @@ Screen.prototype.updateOutputDisplay = function(value) {
 Screen.prototype.openNewParenthesis = function() {
 	this.openParentheses += ')';
 	$('#open-parentheses').text(this.openParentheses);
+	$('#open-parentheses').css('padding', '5px 10px 5px 0px');
 }
 
 Screen.prototype.closeParenthesis = function() {
+	this.updateInputDisplay(')');
+	
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
-	var currentInput = $('#input-display').text;
-	$('#input-display').text(currentInput + ')');
+	$('#open-parentheses').text(this.openParentheses);
+	
+	if (this.openParentheses.length == 0) {
+		$('#open-parentheses').css('padding', '5px 0px 5px 0px');
+	}
 }
 
+Screen.prototype.clearScreen = function() {
+	calculator.screen.clearInputDislay();
+	calculator.screen.clearOutputDisplay();
+	$('#open-parentheses').text('');
+	$('#open-parentheses').css('padding', '5px 0px 5px 0px');
+	calculator.screen.openParentheses = '';
+	calculator.baseCalculation.calculationArray = [];
+}
 
+// Replace the last character of the input display. For use when user changes mind about which operator to use.
+Screen.prototype.replaceOperator = function(newOperator) {
+	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
+	this.inputDisplay += newOperator;
+	$('#input-display').text(this.inputDisplay);
+}
 
 
 
@@ -338,9 +377,43 @@ var calculator = new Calculator();
 * User Interaction
 **/
 
+// Controls the animation when a button is pressed, either via the mouse or keyboard.
+Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
+	console.log("Pressed a button");
+
+	if (inputMethod == 'keyboard') {
+		//btn = document.getElementById('#btn' )
+		btn = $('#btn-' + btn);
+	}
+	console.log(btn);
+	var originalBtnColor = $(btn).css('background-color');
+	$(btn).css('background-color', 'd3d3d3');
+	$(btn).css('color', originalBtnColor);
+
+	if (inputMethod == 'mouse') {
+		$(btn).mouseleave(function() {
+			calculator.buttonPressUp(btn, originalBtnColor);
+		});
+	} else {
+		$(document).keyup(function() {
+			console.log("QWERRTERTWERWEQEQWE");
+			calculator.buttonPressUp(btn, originalBtnColor);
+		});
+	}
+}
+
+Calculator.prototype.buttonPressUp = function(btn, originalBtnColor) {
+	$(btn).css('background-color', originalBtnColor);
+	$(btn).css('color', 'white');
+}
+
 $(document).ready(function() {
 	
-	
+	// Mouse hovers over calculator button.
+	$('.btn').mouseenter(function() {
+		calculator.buttonHighlightOn(this, 'mouse');
+	});
+/*
 	// Buttons change color on mouse hover.
 	$('.btn').mouseenter(function() {
 		var originalBtnColor = $(this).css('background-color');
@@ -351,29 +424,112 @@ $(document).ready(function() {
 			$(this).css('color', 'white');
 		});
 	});
-
+*/
+	// Handle mouse clicks 
 	$('.btn').mousedown(function() {
 		var btnValue = $(this).text().trim();
 		console.log("btnValue = " + btnValue);
 		if (btnValue == '=') {
 			var answer = calculator.calculateAll();
 			calculator.screen.updateOutputDisplay(answer);
-		} else if (btnValue == 'CE') {
-			calculator.baseCalculation.calculationArray = [];
-			calculator.screen.clearInputDislay();
-			calculator.screen.clearOutputDisplay();
+		} else if (btnValue == 'C') {
+			calculator.screen.clearScreen();
 		} else {
 			calculator.receiveInput(btnValue);
-			//calculator.screen.updateInputDisplay(btnValue);
-			//var currentAnswer = calculator.calculateAll();
-			//console.log("Answer is " + currentAnswer);
-			//if (currentAnswer !== calculator.baseCalculation.calculationArray[0]) {
-			//	calculator.screen.updateOutputDisplay(currentAnswer);
-			//}
 		}
 	});
 
-	//function clearInputScreen()
+	Calculator.prototype.keyboardInput = function(keyCode, shiftKey) {
+		console.log("keyboardInput()");
+		console.log(keyCode);
+
+		var keyValue = '';
+		var keyId = '';
+
+		if (keyCode >= 48 && keyCode <= 57 && !shiftKey) {
+			keyValue = (keyCode - 48).toString();
+		} else if (keyCode >= 96 && keyCode <= 105) {
+			keyValue = (keyCode - 96).toString();
+		} else {
+			console.log("Entered operations switch");
+			switch (keyCode) {
+				case 107:
+				case 187:
+					if ((!shiftKey && keyCode == 107) || (shiftKey && keyCode == 187)) {
+						keyValue = '+';
+						keyId = 'plus';
+					}
+					break;
+				case 109:
+				case 189:
+					keyValue = '-';
+					keyId = 'minus';
+					break;
+				case 56:
+				case 106:
+					keyValue = '*';
+					keyId = 'multiply';
+					break;
+				case 111:
+				case 191:
+					keyValue = '/';
+					keyId = 'divide';
+					break;
+				case 54:
+					keyValue = '^';
+					keyId = 'exponent';
+					break;
+				case 46:
+				case 190:
+					keyValue = '.';
+					keyId = 'dot';
+					break;
+				case 57:
+					keyValue = '(';
+					keyId = 'left-bracket';
+					break;
+				case 48:
+					keyValue = ')';
+					keyId = 'right-bracket';
+					break;
+			}
+		}
+		console.log('keyValue is...');
+		console.log(keyValue);
+		if (keyValue != '') {
+			calculator.receiveInput(keyValue);
+			keyId = keyId == '' ? keyValue : keyId;
+		} else if (keyCode == 13 || keyCode == 187) {
+			var answer = calculator.calculateAll();
+			calculator.screen.updateOutputDisplay(answer);
+			var keyId = 'equals';
+		} else if (keyCode == 67 || keyCode == 8 || keyCode == 46) {
+			calculator.screen.clearScreen();
+			var keyId = 'c';
+		}
+
+		this.buttonHighlightOn(keyId, 'keyboard');
+	}
+
+	// Handle key presses
+	$(document).keydown(function(key) {
+		//console.log(key);
+		var keyCode = parseInt(key.keyCode);
+		calculator.keyboardInput(keyCode, key.shiftKey);
+
+		//var keyValue = String.fromCharCode(key.keyCode);
+
+		//console.log(key);
+
+		//calculator.keyboardInput(key.keyCode, keyValue);
+
+
+		//calculator.receiveInput(key);
+		//calculator.buttonPressDown(key, 'keyboard');
+	});
+
+	// Both key and mouse inputs should get filtered through the same function.
+	// Only numbers or operators should go to recieveInput().
 
 
 });
