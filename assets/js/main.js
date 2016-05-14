@@ -195,6 +195,13 @@ Calculator.prototype.calculateAll = function() {
 	return currentAnswer;
 }
 
+Calculator.prototype.equals = function() {
+	this.screen.clearInputDislay();
+	var answer = this.calculateAll();
+	this.baseCalculation = new Calculation(true);
+	this.receiveInput(answer.toString());
+}
+
 /**
 * Calculation Class
 **/
@@ -479,7 +486,8 @@ $(document).ready(function() {
 		var btnValue = $(this).text().trim();
 		console.log("btnValue = " + btnValue);
 		if (btnValue == '=') {
-			calculator.calculateAll();
+			calculator.equals();
+			//calculator.calculateAll();
 			//calculator.screen.updateOutputDisplay(answer);
 		} else if (btnValue == 'C') {
 			//calculator.screen.clearScreen();
@@ -545,7 +553,8 @@ $(document).ready(function() {
 			calculator.receiveInput(keyValue);
 			keyId = keyId == '' ? keyValue : keyId;
 		} else if (keyCode == 13 || keyCode == 187) {
-			calculator.calculateAll();
+			calculator.equals();
+			//calculator.calculateAll();
 			//calculator.screen.updateOutputDisplay(answer);
 			var keyId = 'equals';
 		} else if (keyCode == 67 || keyCode == 8 || keyCode == 46) {

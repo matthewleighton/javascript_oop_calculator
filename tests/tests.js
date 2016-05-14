@@ -956,3 +956,15 @@ QUnit.test("c successfully removes an operator", function(assert) {
 	assert.equal(testCalculator.calculateAll(), '12', "Calculation evaluates to 12");
 	assert.equal(testCalculator.screen.outputDisplay, '12', "Output screen displays 12");
 });
+
+QUnit.test("Pressing enter resets the base calculation array to a new array containing only the previous calculation's value", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('2');
+	testCalculator.equals();
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, '1', "Base calculation array contains 1 element");
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '3', "Base calculation array contains the value '3'");
+	assert.equal(testCalculator.screen.inputDisplay, '3');
+});
