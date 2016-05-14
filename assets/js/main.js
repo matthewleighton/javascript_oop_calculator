@@ -40,19 +40,18 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	console.log("---receiveInput---");
 	console.log(this.baseCalculation);
 
-	// Todo - If the user changes their current operator, the operator on the input display should change,
-	// rather than simply appending the new operator as it currently does.
-
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
 	var lastInput = currentCalculation[currentCalculation.length-1];
+
+	if (!isNaN(lastInput)) {
+		lastInput = lastInput.slice(-1);
+	}
 	
 	// Special cases regarding operators as first input.
 	if (currentCalculation.length == 0 && this.isValidOperator(inputValue)) {
 		if (inputValue == '-') {
 			this.pushInput(currentCalculation, inputValue, inputValue);
-			//currentCalculation.push(inputValue);
-			//this.screen.updateInputDisplay(inputValue);
 		}
 		return;
 	}
@@ -78,8 +77,22 @@ Calculator.prototype.receiveInput = function(inputValue) {
 			return;
 	}
 
+	// Handle decimal point inputs.
+	if (inputValue == '.') {
+		console.log("Last Input was" + lastInput);
+		if (lastInput == '.') {
+			console.log("Last input was . - returning");
+			return;
+		} else if (currentCalculation.length < 1) {
+			this.pushInput(currentCalculation, '0', '0');
+		}
+
+		this.pushInput(currentCalculation, '.', '.', true);
+		return;
+	}
+
 	// Check if the input is a digit.
-	if (!isNaN(inputValue) || inputValue == '.') {
+	if (!isNaN(inputValue)) {
 		// Check if the previous input was also a digit.
 		if (!isNaN(lastInput) || lastInput == '.' || currentCalculation[0] == '-') {
 			//currentCalculation[currentCalculation.length-1] = lastInput + inputValue;
@@ -440,9 +453,6 @@ $(document).ready(function() {
 	});
 
 	Calculator.prototype.keyboardInput = function(keyCode, shiftKey) {
-		console.log("keyboardInput()");
-		console.log(keyCode);
-
 		var keyValue = '';
 		var keyId = '';
 
@@ -451,7 +461,6 @@ $(document).ready(function() {
 		} else if (keyCode >= 96 && keyCode <= 105) {
 			keyValue = (keyCode - 96).toString();
 		} else {
-			console.log("Entered operations switch");
 			switch (keyCode) {
 				case 107:
 				case 187:
@@ -479,7 +488,7 @@ $(document).ready(function() {
 					keyValue = '^';
 					keyId = 'exponent';
 					break;
-				case 46:
+				case 110:
 				case 190:
 					keyValue = '.';
 					keyId = 'dot';
@@ -494,8 +503,7 @@ $(document).ready(function() {
 					break;
 			}
 		}
-		console.log('keyValue is...');
-		console.log(keyValue);
+
 		if (keyValue != '') {
 			calculator.receiveInput(keyValue);
 			keyId = keyId == '' ? keyValue : keyId;
@@ -513,19 +521,9 @@ $(document).ready(function() {
 
 	// Handle key presses
 	$(document).keydown(function(key) {
-		//console.log(key);
 		var keyCode = parseInt(key.keyCode);
 		calculator.keyboardInput(keyCode, key.shiftKey);
 
-		//var keyValue = String.fromCharCode(key.keyCode);
-
-		//console.log(key);
-
-		//calculator.keyboardInput(key.keyCode, keyValue);
-
-
-		//calculator.receiveInput(key);
-		//calculator.buttonPressDown(key, 'keyboard');
 	});
 
 	// Both key and mouse inputs should get filtered through the same function.

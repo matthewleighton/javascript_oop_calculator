@@ -231,8 +231,7 @@ QUnit.test("Correctly handles a calculation including one decimal: 1.5+1=2.5",fu
 	console.log(testCalculator.baseCalculation.calculationArray);
 
 	assert.equal(testCalculator.calculateAll(), '2.5');
-})
-
+});
 
 QUnit.test("Correctly handles a calculation of two decimals: 1.5+1.4=2.9", function(assert) {
 	testCalculator = new Calculator;
@@ -850,3 +849,31 @@ QUnit.test("The calculation array remains unchanged after calculating", function
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 8, "Calculation array still contains 8 elements");
 });
 
+QUnit.test("Decimal points cannot be added twice in a row", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('5');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '1.5', "After entering '1..5', first array element is '1.5'");
+});
+
+QUnit.test("Decimal points cannot be added multiple times at the start of a calculation", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('.');
+	//testCalculator.receiveInput('.');
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 1, "The calculation array contains 1 element");
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '0.', "The first element is '0.'");
+	assert.equal(testCalculator.calculateAll(), 0, "The calculation equals 0");
+});
+
+QUnit.only("If a decimal point is added to a number, but an operator is then inputted before and extra digits, the decimal point will be removed", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('.');
+	testCalculator.receiveInput('+');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '0', "First element of array is '0'");
+	assert.equal(testCalculator.screen.inputDisplay, '1+', "Input display shows '1+'");
+});
