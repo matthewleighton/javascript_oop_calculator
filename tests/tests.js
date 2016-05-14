@@ -957,6 +957,33 @@ QUnit.test("c successfully removes an operator", function(assert) {
 	assert.equal(testCalculator.screen.outputDisplay, '12', "Output screen displays 12");
 });
 
+QUnit.test("c successfully removes several sets of parentheses", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput(')');
+	testCalculator.receiveInput('4');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput(')');
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 4, "After entering '(2)(3)4(5)' the calculation array contains 4 elements");
+	assert.equal(testCalculator.screen.inputDisplay, '(2)(3)4(5)', "The input screen shows '(2)(3)4(5)'");
+
+	testCalculator.removePreviousInput();
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 4, "After pressing c once the array still contains 4 elements");
+	var lastElement = testCalculator.baseCalculation.calculationArray[testCalculator.baseCalculation.calculationArray.length-1];
+	console.log("LAST ELEMENT IS");
+	console.log(lastElement);
+	assert.equal(lastElement.isOpen, true, "After pressing c the last inner-calculation is now open");
+	assert.equal(testCalculator.screen.inputDisplay, '(2)(3)4(5', "The input screen shows '(2)(3)4(5'");	
+});
+
+
+
+
 QUnit.test("Pressing enter resets the base calculation array to a new array containing only the previous calculation's value", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
@@ -967,4 +994,30 @@ QUnit.test("Pressing enter resets the base calculation array to a new array cont
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, '1', "Base calculation array contains 1 element");
 	assert.equal(testCalculator.baseCalculation.calculationArray[0], '3', "Base calculation array contains the value '3'");
 	assert.equal(testCalculator.screen.inputDisplay, '3');
+});
+
+QUnit.test("The calculation will not be evaluated until the base calculation array contains at least three elements or two calculations", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+
+	assert.equal(testCalculator.screen.outputDisplay, '', "After inputting '1+' the output display will still be empty");
+
+	testCalculator.receiveInput('1');
+	assert.equal(testCalculator.screen.outputDisplay, '2', "After inputting another '1' the output display will contain '2'");
+});
+
+QUnit.test("A calculation only containing two sub-calculations will be evaluated", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.screen.outputDisplay, '', "After inputting '(2)' the output display will still be empty");
+
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('3');
+	testCalculator.receiveInput(')');
+	assert.equal(testCalculator.screen.outputDisplay, '6', "After inputting '(3)' the output display will contain '6'");
+
 });

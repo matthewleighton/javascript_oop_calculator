@@ -133,13 +133,11 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 	if (displayValue == '(') {
 		this.screen.openNewParenthesis();
 	}
-
 	
 	this.screen.updateInputDisplay(displayValue);	
 	
-	if (!isNaN(pushValue)) {
+	if (!isNaN(pushValue) && this.readyToCalculate()) {
 		this.calculateAll();
-		//this.screen.updateOutputDisplay(currentAnswer);
 	}
 }
 
@@ -157,20 +155,30 @@ Calculator.prototype.removePreviousInput = function() {
 			//this.screen.closeParenthesis();
 		}
 		return;
+	} else if (!currentCalculation.isOpen) {
+		currentCalculation.isOpen = true;
+		console.log("TESTING CLOSED ARRAY");
+		return;
 	}
 
 	currentCalculation = currentCalculation.calculationArray;
 	var lastElement = currentCalculation[currentCalculation.length-1];
-	var lastInput = '';
+
+	console.log("Last element is...");
+	console.log(lastElement);
+
 	if (!isNaN(lastElement)) {
 		currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
 		this.screen.replaceLastCharacter('');
-		console.log("DO WE GET HERE>?>>>>???");
 		if (currentCalculation[currentCalculation.length-1].length == 0) {
 			currentCalculation.pop();
 		}
-	} else {
+	} else if (lastElement.constructor.name == "Operator") {
+		console.log("DO WE GET HERE>???????????????");
 		currentCalculation.pop();
+		this.screen.replaceLastCharacter('');
+	} else if (!lastElement.isOpen) {
+		currentCalculation[currentCalculation.length-1].isOpen = true;
 		this.screen.replaceLastCharacter('');
 	}
 	this.calculateAll();
@@ -188,6 +196,18 @@ Calculator.prototype.isValidOperator = function(inputValue) {
 	return (this.validOperators.indexOf(inputValue) >= 0) ? true : false;
 }
 
+Calculator.prototype.readyToCalculate = function() {
+	var baseArray = this.baseCalculation.calculationArray;
+	if (baseArray.length > 2) {
+		return true;
+	} else if (baseArray.length == 2 && isNaN(baseArray[0]) && isNaN(baseArray[1]) && 
+		!this.isValidOperator(baseArray[0]) && !this.isValidOperator(baseArray[1]))
+	{
+		return true; // Todo - Refactor this to make it tidier. Perhaps create a seperate function to test whether something is a calculation.
+	}
+	return false;
+}
+
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
 	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation);
@@ -195,6 +215,7 @@ Calculator.prototype.calculateAll = function() {
 	return currentAnswer;
 }
 
+// Starts a new base calculation, containing only the result of the previous calculation.
 Calculator.prototype.equals = function() {
 	this.screen.clearInputDislay();
 	var answer = this.calculateAll();
