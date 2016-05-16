@@ -11,7 +11,7 @@ function Calculator() {
 
 // Returns the calculation object which the inputted values should be entered into.
 // For example, if we have several parentheses this will return the last open one.
-Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = false, previousCalculation = null) {
+Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = false) {
 	
 	// The last element of the calculationArray we're looking at.
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
@@ -28,7 +28,7 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 				return calculation;			
 			}
 		} 
-		return this.findInputTarget(lastElement, closeParenthesis, calculation);
+		return this.findInputTarget(lastElement, closeParenthesis);
 	}
 
 	return calculation;
@@ -136,55 +136,86 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 	
 	this.screen.updateInputDisplay(displayValue);	
 	
-	if (!isNaN(pushValue) && this.readyToCalculate()) {
+	if (!isNaN(pushValue) && this.readyToCalculate(this.baseCalculation)) {
 		this.calculateAll();
 	}
+
+	console.log("After input base calculation array is...");
+	console.log(this.baseCalculation);
 }
 
 // Remove the user's previous input via the 'C' button.
 Calculator.prototype.removePreviousInput = function() {
+	console.log("ENTERING removePreviousInput()");
 	var currentCalculation = this.findInputTarget(this.baseCalculation);
+	console.log("Targeted calculation is ");
+	console.log(currentCalculation);
 
 	// Check if the current calculation is empty. Only remove if it is NOT the base calculation.
 	if (currentCalculation.calculationArray.length == 0) {
 		if (!currentCalculation.isBaseCalculation) {
+			console.log("deleted empty parenthesis - removed left bracket");
 			currentCalculation.isOpen = false;
 			var outerCalculation = this.findInputTarget(this.baseCalculation).calculationArray;
 			outerCalculation.pop();
 			this.screen.removeParenthesis();
-			//this.screen.closeParenthesis();
 		}
-		return;
-	} else if (!currentCalculation.isOpen) {
-		currentCalculation.isOpen = true;
-		console.log("TESTING CLOSED ARRAY");
+		console.log("Attempt to remove base calculation ignored");
+		console.log("calculation array after C:------------------------- ");
+		console.log(this.baseCalculation);
+		this.calculateAll();
 		return;
 	}
 
-	currentCalculation = currentCalculation.calculationArray;
+	var currentCalculation = currentCalculation.calculationArray;
 	var lastElement = currentCalculation[currentCalculation.length-1];
+	var secondLastElement = currentCalculation[currentCalculation.length-2];
+	
+	console.log("Second last element is...");
+	console.log(secondLastElement);
 
 	console.log("Last element is...");
 	console.log(lastElement);
 
 	if (!isNaN(lastElement)) {
+		// Remove the last digit of the number
 		currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
+		console.log("REMOVING NUMBER");
+		console.log(currentCalculation[currentCalculation.length-1]);
 		this.screen.replaceLastCharacter('');
 		if (currentCalculation[currentCalculation.length-1].length == 0) {
+			// If the number is now empty, remove the element itself.
+			console.log("DIGIT IS EMPTY - REMOVING ELEMENT");
 			currentCalculation.pop();
 		}
-	} else if (lastElement.constructor.name == "Operator") {
-		console.log("DO WE GET HERE>???????????????");
+	} else if (lastElement.constructor.name == "Operator" || lastElement == '-') {
+		// Remove the last operator.
+		console.log("Removing operator");
 		currentCalculation.pop();
 		this.screen.replaceLastCharacter('');
 	} else if (!lastElement.isOpen) {
+		// If the last element is a closed parenthesis, open it, removing the closing bracket.
 		currentCalculation[currentCalculation.length-1].isOpen = true;
+		console.log("opened closed parenthesis - deleted right bracket");
 		this.screen.replaceLastCharacter('');
+		this.screen.openNewParenthesis();
 	}
-	this.calculateAll();
-	return;	
-}
 
+	lastElement = currentCalculation[currentCalculation.length-1];
+	console.log("At end of removePreviousInput...");
+	console.log(lastElement);
+
+	if (this.readyToCalculate(this.baseCalculation)) {
+		console.log("CALCULATING AFTER USING C");
+		console.log(this.baseCalculation);
+		this.calculateAll();
+	} else {
+		this.screen.clearOutputDisplay();
+	}
+
+	console.log("calculation array after C:------------------------- ");
+	console.log(this.baseCalculation);	
+}
 
 // Returns true if the input value is either a digit or '.'
 Calculator.prototype.isValidDigit = function(inputValue) {
@@ -196,31 +227,35 @@ Calculator.prototype.isValidOperator = function(inputValue) {
 	return (this.validOperators.indexOf(inputValue) >= 0) ? true : false;
 }
 
-Calculator.prototype.readyToCalculate = function() {
-	var baseArray = this.baseCalculation.calculationArray;
+Calculator.prototype.readyToCalculate = function(calculation) {
+	var baseArray = calculation.calculationArray;
 	if (baseArray.length > 2) {
 		return true;
-	} else if (baseArray.length == 2 && isNaN(baseArray[0]) && isNaN(baseArray[1]) && 
-		!this.isValidOperator(baseArray[0]) && !this.isValidOperator(baseArray[1]))
-	{
-		return true; // Todo - Refactor this to make it tidier. Perhaps create a seperate function to test whether something is a calculation.
+	} else if (baseArray.length == 2 && baseArray[0].constructor.name != "Operator" && baseArray[1].constructor.name != "Operator") {
+		return true;
+	} else if (baseArray[0] && baseArray[0].constructor.name == "Calculation" && baseArray[0].calculationArray.length > 0) {
+		return this.readyToCalculate(baseArray[0]);
 	}
+
+	this.screen.updateOutputDisplay('');
 	return false;
 }
 
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
-	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation);
+	console.log("----------Running Calculate All----------");
+	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation.calculationArray);
 	this.screen.updateOutputDisplay(currentAnswer);
 	return currentAnswer;
 }
 
 // Starts a new base calculation, containing only the result of the previous calculation.
 Calculator.prototype.equals = function() {
-	this.screen.clearInputDislay();
 	var answer = this.calculateAll();
+	this.screen.clearScreen();
 	this.baseCalculation = new Calculation(true);
 	this.receiveInput(answer.toString());
+	console.log(this.screen.inputDisplay == 3);
 }
 
 /**
@@ -240,10 +275,10 @@ function Calculation(base = false) {
 }
 
 // Removes trailing operations (e.g. '1+1+') from the workingCalculationArray, ensuring the program won't fail trying to calculate them.
-Calculation.prototype.ignoreTrailingOperations = function(calculation) {
+Calculation.prototype.ignoreTrailingOperations = function(inputCalculation) {
+	var calculation = $.extend([], inputCalculation);
+
 	var lastElement = calculation[calculation.length-1];
-	console.log("HELLO?");
-	console.log(lastElement);
 	if (lastElement && !isNaN(lastElement)) {
 		return calculation;
 	} else if (lastElement && lastElement.constructor.name == "Operator" || lastElement == '-') {
@@ -252,7 +287,6 @@ Calculation.prototype.ignoreTrailingOperations = function(calculation) {
 		return calculation;
 	} else if (lastElement && lastElement.constructor.name == "Calculation") {
 		console.log("ignoreTrailingOperations() - calculation");
-		//var newCalculation = $.extend([], )
 		calculation[calculation.length-1].calculationArray = this.ignoreTrailingOperations(lastElement.calculationArray);
 		if (!lastElement.calculationArray.length > 0) {
 			calculation.pop();
@@ -268,20 +302,13 @@ Calculation.prototype.ignoreTrailingOperations = function(calculation) {
 
 // Returns the answer of this calculation.
 // Recursively solves parentheses as calculation objects of their own.
-Calculation.prototype.runCalculation = function(workingCalculationArray) {
-	// Create a copy of the calculationArray if necessary, to ensure we're not altering the original array.
-	//if (workingCalculationArray.constructor.name == "Calculation") {
-		var workingCalculationArray = $.extend([], workingCalculationArray.calculationArray);
-	//}
+Calculation.prototype.runCalculation = function(inputCalculation) {
+	console.log("Entering calculation...");
+	// Create a copy of the calculationArray, to ensure we're not altering the original array.
+	var workingCalculationArray = [];
+	$.extend(workingCalculationArray, inputCalculation);
 
-	console.log("Before removing operations, calculation is...");
-	console.log(workingCalculationArray);
-
-	//
-	workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
-
-	console.log("After removing operations, calculation is...");
-	console.log(workingCalculationArray);
+	//workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
 
 	if (workingCalculationArray.length == 0) {
 		return 0;
@@ -290,26 +317,47 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operator.
 	var i = 0;
 	while (i < workingCalculationArray.length) {
-		if (workingCalculationArray[i].constructor.name == "Calculation") {
-			if (workingCalculationArray[i-1] && !isNaN(workingCalculationArray[i-1])) {
-				workingCalculationArray.splice(i, 0, new Operator('*'));
-				i++;
-			}
-			if (workingCalculationArray[i+1] && (!isNaN(workingCalculationArray[i+1]) || workingCalculationArray[i+1].constructor.name == "Calculation")) {
-				workingCalculationArray.splice(i+1, 0, new Operator('*'));
-			}
-			if (workingCalculationArray[i].length == 1) {
-				workingCalculationArray[i] = workingCalculationArray[i].calculationArray[0];
-			}
+		if (workingCalculationArray[i] == '-') {
+			console.log("setting '-' to null");
+			workingCalculationArray[i] = null;
+		} else if (workingCalculationArray[i].constructor.name == "Calculation") {
+			if (workingCalculationArray[i].calculationArray.length < 1) {
+				workingCalculationArray[i] = null;
+			} else {
+				if (workingCalculationArray[i-1] && !isNaN(workingCalculationArray[i-1])) {
+					workingCalculationArray.splice(i, 0, new Operator('*'));
+					i++;
+				}
+				if (workingCalculationArray[i+1] && (!isNaN(workingCalculationArray[i+1]) || workingCalculationArray[i+1].constructor.name == "Calculation")) {
+					workingCalculationArray.splice(i+1, 0, new Operator('*'));
+				}
+				if (workingCalculationArray[i].calculationArray.length == 1) {
+					console.log("DOes this rfdgbksd");
+					workingCalculationArray[i] = workingCalculationArray[i].calculationArray[0];
+				}	
+			}			
 		}
 		i++;
 	}
 
+	if (workingCalculationArray.length == 1) {
+		console.log("workingCalculationArray only contains 1 element");
+		if (workingCalculationArray[0] == null) {
+			workingCalculationArray[0] = 0;
+		} else if (workingCalculationArray[0].constructor.name == "Calculation") {
+			workingCalculationArray[0] = this.runCalculation(workingCalculationArray[0].calculationArray);
+		} else if (workingCalculationArray[0] == '-') {
+			return 0;
+		}
+		return workingCalculationArray[0];
+	}
+
 	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
+		console.log("Entering main loop");
 		// If the first element is a parenthesis, evaluate it first and replace it with its value.
 		// We specify this since we usually skip the first element in the for loop.
 		if (isNaN(workingCalculationArray[0])) {
-			workingCalculationArray[0] = workingCalculationArray[0].runCalculation(workingCalculationArray[0]);
+			workingCalculationArray[0] = workingCalculationArray[0].runCalculation(workingCalculationArray[0].calculationArray);
 		}
 		
 		var memory = parseFloat(workingCalculationArray[0]);
@@ -317,27 +365,49 @@ Calculation.prototype.runCalculation = function(workingCalculationArray) {
 		
 		for (var i = 1; i < workingCalculationArray.length; i++) {
 			// Check if the object we're looking at is a parenthesis. If so, calculate it first.
-			if (workingCalculationArray[i].constructor.name == "Calculation") {
-				workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i]);
-			}
-
-			if (workingCalculationArray[i].constructor.name == "Operator") {
-				currentOperator = workingCalculationArray[i];
-			} else {
-				// Check if the following operator takes priority by order of operations.
-				if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
-					memory = parseFloat(workingCalculationArray[i]);
+			if (workingCalculationArray[i]) {
+				if (workingCalculationArray[i].constructor.name == "Calculation") {
+					console.log("Running inner calculation");
+					workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i].calculationArray);
+				}
+				console.log(workingCalculationArray[i]);
+				if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1]) {
+					console.log("Assigning current operator");
+					currentOperator = workingCalculationArray[i];
 				} else {
-					workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
-					memory = workingCalculationArray[i];
-					workingCalculationArray[i-1] = null;
-					workingCalculationArray[i-2] = null;
+					// Check if the following operator takes priority by order of operations.
+					if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
+						memory = parseFloat(workingCalculationArray[i]);
+					} else {
+						
+						var safeToCalculate = true;
+						if (workingCalculationArray[i].constructor.name == "Operator") {
+							safeToCalculate = false;
+							workingCalculationArray[i] = null;
+						}
+
+						if (safeToCalculate) {
+							workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
+							memory = workingCalculationArray[i];
+							workingCalculationArray[i-1] = null;
+							workingCalculationArray[i-2] = null;
+						}
+					}
 				}
 			}
 		}
+	
 		// Remove all null values (numbers we've already calculated) from the array.
 		workingCalculationArray = workingCalculationArray.filter(function(n){return n != null});
 		console.log(workingCalculationArray);
+	}
+
+	console.log("At end of calculation...");
+	console.log(calculator.baseCalculation);
+
+	if (workingCalculationArray[0] == null) {
+		console.log("Setting last null value to 0");
+		workingCalculationArray[0] = 0;
 	}
 
 	return workingCalculationArray[0];
@@ -448,7 +518,7 @@ Screen.prototype.clearScreen = function() {
 	$('#open-parentheses').text('');
 	$('#open-parentheses').css('padding', '5px 0px 5px 0px');
 	calculator.screen.openParentheses = '';
-	calculator.baseCalculation.calculationArray = [];
+	//calculator.baseCalculation.calculationArray = [];
 }
 
 // Replace the last character of the input display. For use when user changes mind about which operator to use.
@@ -469,14 +539,14 @@ var calculator = new Calculator();
 
 // Controls the animation when a button is pressed, either via the mouse or keyboard.
 Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
-	console.log("Pressed a button");
+	//console.log("Pressed a button");
 
 	if (inputMethod == 'keyboard') {
 		btn = $('#btn-' + btn);
 	}
-	console.log(btn);
+	//console.log(btn);
 	var originalBtnColor = $(btn).css('background-color');
-	$(btn).css('background-color', 'd3d3d3');
+	$(btn).css('background-color', '#D3D3D3');
 	$(btn).css('color', originalBtnColor);
 
 	if (inputMethod == 'mouse') {
@@ -575,8 +645,6 @@ $(document).ready(function() {
 			keyId = keyId == '' ? keyValue : keyId;
 		} else if (keyCode == 13 || keyCode == 187) {
 			calculator.equals();
-			//calculator.calculateAll();
-			//calculator.screen.updateOutputDisplay(answer);
 			var keyId = 'equals';
 		} else if (keyCode == 67 || keyCode == 8 || keyCode == 46) {
 			calculator.removePreviousInput();
@@ -600,3 +668,7 @@ $(document).ready(function() {
 
 });
 
+
+
+// Todo tomorrow - The output should always be empty if there are fewer than two numbers present in the array.
+// There's currently an issue with the output still being visable when we use c to undo input.
