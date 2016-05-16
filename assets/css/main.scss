@@ -9,7 +9,7 @@ $display-screen-text: #4D4D4D;
 $number-btn-color: #666666;
 $operation-btn-color: #848484;
 
-$input-and-parentheses-size: 40px;
+$input-and-parentheses-size: 30px;
 
 * {
 	font-family: 'Open Sans';
@@ -41,6 +41,8 @@ $input-and-parentheses-size: 40px;
 }
 
 #input-display {
+	display: inline-block;
+	float: right;
 	font-size: $input-and-parentheses-size;
 }
 
@@ -49,7 +51,6 @@ $input-and-parentheses-size: 40px;
 	float: right;
 	font-size: $input-and-parentheses-size;
 	padding: 5px 0px 5px 0px;
-
 }
 
 #output-display {

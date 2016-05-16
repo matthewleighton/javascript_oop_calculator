@@ -140,6 +140,8 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 		this.calculateAll();
 	}
 
+	this.screen.checkFontSize();
+
 	console.log("After input base calculation array is...");
 	console.log(this.baseCalculation);
 }
@@ -204,6 +206,8 @@ Calculator.prototype.removePreviousInput = function() {
 	lastElement = currentCalculation[currentCalculation.length-1];
 	console.log("At end of removePreviousInput...");
 	console.log(lastElement);
+
+	this.screen.checkFontSize();
 
 	if (this.readyToCalculate(this.baseCalculation)) {
 		console.log("CALCULATING AFTER USING C");
@@ -528,7 +532,25 @@ Screen.prototype.replaceLastCharacter = function(newOperator) {
 	$('#input-display').text(this.inputDisplay);
 }
 
+// Resizes the font based on the numer of characters in the input/output display.
+Screen.prototype.checkFontSize = function() {
+	var inputCharacters = this.inputDisplay.length;
+	var inputFontSize = '';
 
+	if (inputCharacters < 14) {
+		inputFontSize = 40;
+	} else if (inputCharacters >= 14 && inputCharacters < 25) {
+		inputFontSize = 40-(2*(inputCharacters-14));
+	} else {
+		inputFontSize = 18;
+	}
+
+
+	console.log("TGSDFGSDFGSHDFSGH");
+
+	$('#input-display').css('font-size', inputFontSize);
+	$('#open-parentheses').css('font-size', inputFontSize);
+}
 
 
 var calculator = new Calculator();
@@ -555,6 +577,9 @@ Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
 		});
 	} else {
 		$(document).keyup(function() {
+			calculator.keydown = false;
+			console.log("Resetting keydown");
+			console.log(this);
 			calculator.buttonPressUp(btn, originalBtnColor);
 		});
 	}
@@ -652,14 +677,16 @@ $(document).ready(function() {
 			var keyId = 'c';
 		}
 
+		this.keydown = true;
 		this.buttonHighlightOn(keyId, 'keyboard');
 	}
 
 	// Handle key presses
 	$(document).keydown(function(key) {
-		var keyCode = parseInt(key.keyCode);
-		calculator.keyboardInput(keyCode, key.shiftKey);
-
+		if (!calculator.keydown) {
+			var keyCode = parseInt(key.keyCode);
+			calculator.keyboardInput(keyCode, key.shiftKey);	
+		}
 	});
 
 	// Both key and mouse inputs should get filtered through the same function.
