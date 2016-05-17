@@ -30,13 +30,14 @@
 
 #open-parentheses {
   color: #B5B5B5;
+  display: none;
   float: right;
   font-size: 30px;
   padding: 5px 0px 5px 0px; }
 
 #output-display {
-  position: relative;
-  font-size: 30px; }
+  font-size: 30px;
+  position: relative; }
 
 .btn {
   color: white;

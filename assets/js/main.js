@@ -7,6 +7,8 @@ function Calculator() {
 	this.baseCalculation = new Calculation(true);
 	this.screen = new Screen;
 	this.validOperators = ['+', '-', '*', '/', '^'];
+
+	this.pressedKeys = [];
 }
 
 // Returns the calculation object which the inputted values should be entered into.
@@ -141,7 +143,7 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 		this.calculateAll();
 	}
 
-	this.screen.checkFontSize();
+	this.screen.setInputDisplayFontSize();
 
 	console.log("After input base calculation array is...");
 	console.log(this.baseCalculation);
@@ -208,7 +210,7 @@ Calculator.prototype.removePreviousInput = function() {
 	console.log("At end of removePreviousInput...");
 	console.log(lastElement);
 
-	this.screen.checkFontSize();
+	this.screen.setInputDisplayFontSize();
 
 	if (this.readyToCalculate(this.baseCalculation)) {
 		console.log("CALCULATING AFTER USING C");
@@ -256,6 +258,7 @@ Calculator.prototype.calculateAll = function() {
 
 // Starts a new base calculation, containing only the result of the previous calculation.
 Calculator.prototype.equals = function() {
+	this.screen.closeAllParentheses();
 	var answer = this.calculateAll().toString();
 	this.baseCalculation = new Calculation(true);
 	this.baseCalculation.calculationArray.push(answer);
@@ -502,6 +505,7 @@ Screen.prototype.openNewParenthesis = function() {
 	this.openParentheses += ')';
 	$('#open-parentheses').text(this.openParentheses);
 	$('#open-parentheses').css('padding', '5px 10px 5px 0px');
+	$('#open-parentheses').css('display', 'inline-block');
 }
 
 Screen.prototype.closeParenthesis = function() {
@@ -519,6 +523,9 @@ Screen.prototype.removeParenthesis = function() {
 	this.replaceLastCharacter('');
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
 	$('#open-parentheses').text(this.openParentheses);
+	if (this.openParentheses == '') {
+		$('#open-parentheses').css('display', 'none');
+	}
 }
 
 Screen.prototype.clearScreen = function() {
@@ -538,21 +545,33 @@ Screen.prototype.replaceLastCharacter = function(newOperator) {
 }
 
 // Resizes the font based on the numer of characters in the input/output display.
-Screen.prototype.checkFontSize = function() {
-	var inputCharacters = this.inputDisplay.length;
-	var inputFontSize = '';
-
-	if (inputCharacters < 14) {
-		inputFontSize = 40;
-	} else if (inputCharacters >= 14 && inputCharacters < 25) {
-		inputFontSize = 40-(2*(inputCharacters-14));
-	} else {
-		inputFontSize = 18;
-	}
+Screen.prototype.setInputDisplayFontSize = function() {
+	var inputFontSize = this.findCorrectFontSize();
 
 	$('#input-display').css('font-size', inputFontSize);
 	$('#open-parentheses').css('font-size', inputFontSize);
 }
+
+Screen.prototype.closeAllParentheses = function() {
+	this.openParentheses = '';
+	$('#open-parentheses').empty();
+	$('#open-parentheses').css('display', 'none');
+}
+
+// Returns the correct font size for the input display, based on how many characters it contains.
+Screen.prototype.findCorrectFontSize = function() {
+	var inputCharacters = this.inputDisplay.length;
+
+	if (inputCharacters < 14) {
+		return 40;
+	} else if (inputCharacters >= 14 && inputCharacters < 25) {
+		return 40-(2*(inputCharacters-14));
+	} else {
+		return 18;
+	}
+}
+
+//Screen.prototype.returnCorrectFontSize()
 
 Screen.prototype.equalsAnimation = function(answer) {
 	var originalFontSize = $('#output-display').css('font-size');
@@ -564,7 +583,8 @@ Screen.prototype.equalsAnimation = function(answer) {
 
 		//calculator.screen.clearInputDislay();
 		//$(document).keydown(false);
-		$('#output-display').animate({"font-size":"40px", "bottom": "66px"}, 500);
+		fontSize = calculator.screen.findCorrectFontSize();
+		$('#output-display').animate({"font-size":fontSize, "bottom": "66px"}, 500);
 
 		//setTimeout(function() {
 		//	r.resolve();
@@ -580,6 +600,7 @@ Screen.prototype.equalsAnimation = function(answer) {
 			calculator.screen.clearOutputDisplay();
 			$('#output-display').css('bottom', '0px');
 			$('#output-display').css('font-size', '30px');
+			calculator.screen.setInputDisplayFontSize();
 			console.log("DONE");
 		} else {
 			calculator.skippingAnimation = false;
@@ -602,7 +623,7 @@ var calculator = new Calculator();
 **/
 
 // Controls the animation when a button is pressed, either via the mouse or keyboard.
-Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
+Calculator.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '') {
 	//console.log("Pressed a button");
 
 	if (inputMethod == 'keyboard') {
@@ -619,9 +640,15 @@ Calculator.prototype.buttonHighlightOn = function(btn, inputMethod) {
 		});
 	} else {
 		$(document).keyup(function() {
-			calculator.keydown = false;
-			console.log("Resetting keydown");
-			console.log(this);
+			var index = calculator.pressedKeys.indexOf(keyCode);
+			if (index > -1) {
+				calculator.pressedKeys.splice(index);
+			}
+
+			//calculator.keydown = false;
+			//console.log("Resetting keydown");
+
+
 			calculator.buttonPressUp(btn, originalBtnColor);
 		});
 	}
@@ -645,10 +672,7 @@ $(document).ready(function() {
 		console.log("btnValue = " + btnValue);
 		if (btnValue == '=') {
 			calculator.equals();
-			//calculator.calculateAll();
-			//calculator.screen.updateOutputDisplay(answer);
 		} else if (btnValue == 'C') {
-			//calculator.screen.clearScreen();
 			calculator.removePreviousInput();
 		} else {
 			calculator.receiveInput(btnValue);
@@ -715,35 +739,36 @@ $(document).ready(function() {
 			var keyId = 'equals';
 		} else if (keyCode == 67 || keyCode == 8 || keyCode == 46) {
 			calculator.removePreviousInput();
-			//calculator.screen.clearScreen();
 			var keyId = 'c';
 		}
 
+		//if (this.pressedKeys.indexOf(keyCode) >= 0) {
+
+		//}
+
+		this.pressedKeys.push(keyCode);
+		console.log(this.pressedKeys);
+
+/*
 		if (keyCode != 16) {
 			this.keydown = true;	
 		}
-		
-		this.buttonHighlightOn(keyId, 'keyboard');
+*/		
+		this.buttonHighlightOn(keyId, 'keyboard', keyCode);
 	}
 
 	// Handle key presses
 	$(document).keydown(function(key) {
-		if (!calculator.keydown) {
-			var triggerKeypress = function(key) {
-				var keyCode = parseInt(key.keyCode);
-				calculator.keyboardInput(keyCode, key.shiftKey);
-			}
-
-			
-			calculator.screen.skipAnimation();
-
-			triggerKeypress(key);
-			
+		if (/*key.keyCode == 67 || */calculator.pressedKeys.indexOf(key.keyCode) < 0) {
+			console.log("FSGDGSDG");
+			calculator.screen.skipEqualsAnimation();
+			var keyCode = parseInt(key.keyCode);
+			calculator.keyboardInput(keyCode, key.shiftKey);
 		}
 	});
 
 	// If the 'equals' animation is currently running, skip to the end of it.
-	Screen.prototype.skipAnimation = function() {
+	Screen.prototype.skipEqualsAnimation = function() {
 		if ($('#output-display').is(':animated')) {
 			$('#output-display').finish();
 			calculator.skipingAnimation = true;
