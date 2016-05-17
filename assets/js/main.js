@@ -42,6 +42,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
+	console.log(currentCalculation);
 	var lastElement = currentCalculation[currentCalculation.length-1];
 	var lastInput = '';
 
@@ -255,10 +256,14 @@ Calculator.prototype.calculateAll = function() {
 
 // Starts a new base calculation, containing only the result of the previous calculation.
 Calculator.prototype.equals = function() {
-	var answer = this.calculateAll();
-	this.screen.clearScreen();
+	var answer = this.calculateAll().toString();
 	this.baseCalculation = new Calculation(true);
-	this.receiveInput(answer.toString());
+	this.baseCalculation.calculationArray.push(answer);
+	console.log(this.baseCalculation.calculationArray);
+	this.screen.equalsAnimation(answer);
+	
+	//this.screen.clearScreen();
+	//this.receiveInput(answer.toString());
 	console.log(this.screen.inputDisplay == 3);
 }
 
@@ -545,11 +550,48 @@ Screen.prototype.checkFontSize = function() {
 		inputFontSize = 18;
 	}
 
-
-	console.log("TGSDFGSDFGSHDFSGH");
-
 	$('#input-display').css('font-size', inputFontSize);
 	$('#open-parentheses').css('font-size', inputFontSize);
+}
+
+Screen.prototype.equalsAnimation = function(answer) {
+	var originalFontSize = $('#output-display').css('font-size');
+	this.inputDisplay = answer;
+	$('#input-display').text('');
+
+	var animateOutput = function() {
+		//var r = $.Deferred();
+
+		//calculator.screen.clearInputDislay();
+		//$(document).keydown(false);
+		$('#output-display').animate({"font-size":"40px", "bottom": "66px"}, 500);
+
+		//setTimeout(function() {
+		//	r.resolve();
+		//}, 1000);
+
+		//return r;
+	}
+
+	var resetPositions = function(answer) {
+		//alert(answer);
+		if (!calculator.skipingAnimation) {
+			$('#input-display').text(calculator.screen.inputDisplay);
+			calculator.screen.clearOutputDisplay();
+			$('#output-display').css('bottom', '0px');
+			$('#output-display').css('font-size', '30px');
+			console.log("DONE");
+		} else {
+			calculator.skippingAnimation = false;
+		}
+	}
+
+	animateOutput();
+	setTimeout(function() {
+		resetPositions(answer);
+	}, 600);
+
+	//animateOutput().done(resetPositions(answer));
 }
 
 
@@ -677,17 +719,41 @@ $(document).ready(function() {
 			var keyId = 'c';
 		}
 
-		this.keydown = true;
+		if (keyCode != 16) {
+			this.keydown = true;	
+		}
+		
 		this.buttonHighlightOn(keyId, 'keyboard');
 	}
 
 	// Handle key presses
 	$(document).keydown(function(key) {
 		if (!calculator.keydown) {
-			var keyCode = parseInt(key.keyCode);
-			calculator.keyboardInput(keyCode, key.shiftKey);	
+			var triggerKeypress = function(key) {
+				var keyCode = parseInt(key.keyCode);
+				calculator.keyboardInput(keyCode, key.shiftKey);
+			}
+
+			
+			calculator.screen.skipAnimation();
+
+			triggerKeypress(key);
+			
 		}
 	});
+
+	// If the 'equals' animation is currently running, skip to the end of it.
+	Screen.prototype.skipAnimation = function() {
+		if ($('#output-display').is(':animated')) {
+			$('#output-display').finish();
+			calculator.skipingAnimation = true;
+
+			$('#input-display').text(this.inputDisplay);
+			calculator.screen.clearOutputDisplay();
+			$('#output-display').css('bottom', '0px');
+			$('#output-display').css('font-size', '30px');
+		}		
+	}
 
 	// Both key and mouse inputs should get filtered through the same function.
 	// Only numbers or operators should go to recieveInput().
