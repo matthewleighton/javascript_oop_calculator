@@ -718,7 +718,7 @@ QUnit.test("Performing a calculation doesn't effect the calculationArray itself"
 	assert.deepEqual(beforeCalculation, afterCalculation);
 });
 
-QUnit.test("If a calculation ends in an operator, it will be ignores while calculating", function(assert) {
+QUnit.test("If a calculation ends in an operator, it will be ignored while calculating", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('+');
@@ -847,6 +847,19 @@ QUnit.test("The calculation array remains unchanged after calculating", function
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 8, "Calculation array contains 8 elements");
 	assert.equal(testCalculator.calculateAll(), 14);
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 8, "Calculation array still contains 8 elements");
+});
+
+QUnit.test("Inputting a decimal point after a minus at the start of a calculation will insert a '0' before the '.'", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('.');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 1, "Calculation Array contains 1 elements after inputting '-.'");
+	assert.equal(testCalculator.baseCalculation.calculationArray[0], '-0.', "The first element of the calculation array is '-0.'");
+
+	testCalculator.receiveInput('1');
+
+	assert.equal(testCalculator.calculateAll(), '-0.1', "After inputing '1', the calculation evaluates to '-0.1");
 });
 
 QUnit.test("Decimal points cannot be added twice in a row", function(assert) {
@@ -1131,5 +1144,15 @@ QUnit.test("A calcualtion containing only a number and one sub-calculation will 
 	testCalculator.receiveInput('3');
 	testCalculator.receiveInput(')');
 
-	assert.equal(testCalculator.screen.outputDisplay, '6', "After inputting'2(3)' teh output display will contain '6'");
+	assert.equal(testCalculator.screen.outputDisplay, '6', "After inputting'2(3)' the output display will contain '6'");
 });
+
+/*QUnit.test("10/3 = 3.3333333333", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('3');
+
+	assert.equal(testCalculator.calculateAll(), '3.3333333333');
+});*/

@@ -1,5 +1,9 @@
 // Todo - Implement some kind of rounding, to avoid gettings irrational results.
 
+// Todo - Prevent equals button from being used when there isn't actually anything to calculate.
+
+// Todo - If output display says 'Infinity', the calculation array should be reset to empty, so that the next input will start a new calculation.
+
 /**
 * Calculator Class
 **/
@@ -10,25 +14,21 @@ function Calculator() {
 	this.validOperators = ['+', '-', '*', '/', '^'];
 }
 
-// Returns the calculation object which the inputted values should be entered into.
+// Returns the calculation object which the inputted value should be entered into.
 // For example, if we have several parentheses this will return the last open one.
 Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = false) {
-	
 	// The last element of the calculationArray we're looking at.
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
 
-	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {	
-		// If the input was a closing parenthesis, we set the last calculation to 'closed', and return the 2nd from last calcualtion.
-		// Todo - This could do with refactoring/cleaning up?
-		if (closeParenthesis && lastElement.calculationArray[lastElement.calculationArray.length-1]) {
-			if (!(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation") ||
-				(lastElement.calculationArray[lastElement.calculationArray.length-1].constructor.name == "Calculation" &&
-				!(lastElement.calculationArray[lastElement.calculationArray.length-1].isOpen))) {
-				lastElement.isOpen = false;
-				this.screen.closeParenthesis();
-				return calculation;			
-			}
-		} 
+	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {
+		var innerCalculation = lastElement.calculationArray[lastElement.calculationArray.length-1];
+
+		if (closeParenthesis && innerCalculation && (innerCalculation.constructor.name != "Calculation" || !innerCalculation.isOpen)) {
+			lastElement.isOpen = false;
+			this.screen.closeParenthesis();
+			return calculation;
+		}
+
 		return this.findInputTarget(lastElement, closeParenthesis);
 	}
 
@@ -38,29 +38,18 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 // Recieve an input from the user, and 
 // Add either a digit or operator onto the current operation.
 Calculator.prototype.receiveInput = function(inputValue) {
-	//console.log("---receiveInput---");
-	//console.log(this.baseCalculation);
-
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
-	console.log(currentCalculation);
-	var lastElement = currentCalculation[currentCalculation.length-1];
-	var lastInput = '';
+	var lastElement = currentCalculation[currentCalculation.length-1];	
 
+	// If the lastElement is a number, the variable 'lastInput' is its final digit.
 	if (!isNaN(lastElement)) {
-		var lastInput = lastElement.slice(-1);
-	}
-	
-	// Special cases regarding operators as first input.
-	if (currentCalculation.length == 0 && this.isValidOperator(inputValue)) {
-		if (inputValue == '-') {
-			this.pushInput(currentCalculation, inputValue, inputValue);
-		}
-		return;
+		var finalDigit = lastElement.slice(-1);
 	}
 
 	// Special case for using a negative number as first input.
 	// Addition causes the calculation to be cleared, while all other operators are ignored.
+	// Todo - Refactor this into the operator input section below.
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
@@ -69,55 +58,56 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		return;
 	}
 
-	// If both the previous and current inputs are operators, replace the previous operator with the new one.
-	// Todo - refactor/tidy this?
-	if (isNaN(inputValue) &&
-		currentCalculation.length > 0 &&
-		currentCalculation[currentCalculation.length-1].constructor.name == "Operator" &&
-		calculator.isValidOperator(inputValue)) {
-			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
-			calculator.screen.replaceLastCharacter(inputValue);
-			return;
-	}
-
-	// Handle decimal point inputs.
-	if (inputValue == '.') {
-		console.log("Last element was" + lastElement);
+	if (inputValue == '.') { // ----- Handle input of decimal points -----
+		
+		// Prevent input if the number already contains a decimal.
 		if (!isNaN(lastElement) && lastElement.indexOf('.') != -1) {
-			console.log("Last input was . - returning");
 			return;
-		} else if (currentCalculation.length < 1 || lastElement.constructor.name == 'Operator') {
-			this.pushInput(currentCalculation, '0', '0');
+		} else if (currentCalculation.length < 1 || lastElement.constructor.name == 'Operator'|| lastElement == '-') {
+			this.receiveInput('0');
 		}
 
 		this.pushInput(currentCalculation, '.', '.', true);
-		return;
-	}
 
-	// Handle input of digits.
-	if (!isNaN(inputValue)) {
+	} else if (!isNaN(inputValue)) { // ----- Handle input of digits -----
+		
 		if (lastElement == '0') {
 			currentCalculation.pop();
 			console.log(currentCalculation);
 			this.screen.replaceLastCharacter('');
 			lastElement = currentCalculation[currentCalculation.length-1];
 		}
-		if (!isNaN(lastElement) || lastInput == '.' || currentCalculation[0] == '-') {
+
+		if (!isNaN(lastElement) || finalDigit == '.' || currentCalculation[0] == '-') {
 			this.pushInput(currentCalculation, inputValue, inputValue, true);
 		} else {
 			this.pushInput(currentCalculation, inputValue, inputValue);
 		}
-	// Handle input of operators.
-	} else if (this.isValidOperator(inputValue)) {
-		if (lastInput == '.') {
+	
+	} else if (this.isValidOperator(inputValue)) { // ----- Handle input of operators -----
+		
+		// Operators as will be ignored as first input, except for '-'.
+		if (currentCalculation.length == 0) {
+			if (inputValue == '-') {
+				this.pushInput(currentCalculation, inputValue, inputValue);
+			}
+			return;
+		}
+
+		// If the previous input is also an operator, replace it with the new one.
+		if (currentCalculation[currentCalculation.length-1].constructor.name == "Operator") {
+			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
+			calculator.screen.replaceLastCharacter(inputValue);
+			return;
+		}
+
+		if (finalDigit == '.') {
 			currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
 			this.screen.replaceLastCharacter('');
 		}
 		this.pushInput(currentCalculation, new Operator(inputValue), inputValue);
-	}
 
-	// Handle input of open parenthesis.
-	if (inputValue == '(') {
+	} else if (inputValue == '(') { // ----- Handle input of open parenthesis -----
 		this.pushInput(currentCalculation, new Calculation, '(');
 	}
 }
@@ -126,8 +116,8 @@ Calculator.prototype.receiveInput = function(inputValue) {
 // AppendDigit toggles whether the input is a digit being added to the end of a current number.
 Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, appendingDigit = false) {
 	if (appendingDigit) {
-		var lastDigit = calculation[calculation.length-1];
-		calculation[calculation.length-1] = lastDigit + pushValue;
+		var lastElement = calculation[calculation.length-1];
+		calculation[calculation.length-1] = lastElement + pushValue;
 	} else {
 		calculation.push(pushValue);
 	}
@@ -143,9 +133,6 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 	}
 
 	this.screen.setInputDisplayFontSize();
-
-	//console.log("After input base calculation array is...");
-	//console.log(this.baseCalculation);
 }
 
 // Remove the user's previous input via the 'C' button.
@@ -155,14 +142,12 @@ Calculator.prototype.removePreviousInput = function() {
 	// Check if the current calculation is empty. Only remove if it is NOT the base calculation.
 	if (currentCalculation.calculationArray.length == 0) {
 		if (!currentCalculation.isBaseCalculation) {
-			console.log("deleted empty parenthesis - removed left bracket");
 			currentCalculation.isOpen = false;
 			var outerCalculation = this.findInputTarget(this.baseCalculation).calculationArray;
 			outerCalculation.pop();
 			this.screen.removeParenthesis();
+			this.calculateAll();
 		}
-
-		this.calculateAll();
 		return;
 	}
 
@@ -188,10 +173,8 @@ Calculator.prototype.removePreviousInput = function() {
 		this.screen.openNewParenthesis();
 	}
 
-	lastElement = currentCalculation[currentCalculation.length-1];
-	this.screen.setInputDisplayFontSize();
-
 	if (this.readyToCalculate(this.baseCalculation)) {
+		this.screen.setInputDisplayFontSize();
 		this.calculateAll();
 	} else {
 		this.screen.clearOutputDisplay();
@@ -255,60 +238,23 @@ function Calculation(base = false) {
 	this.isBaseCalculation = base;
 }
 
-/*
-ignoreTrailingOperations() is not currently being used, as it was causing an issue with operators being removed from the original calcululation
-array while using 'C' inside of a parenthesis. Leaving the code here for now in case I later refactor to use it again.
-
-// Removes trailing operations (e.g. '1+1+') from the workingCalculationArray, ensuring the program won't fail trying to calculate them.
-Calculation.prototype.ignoreTrailingOperations = function(inputCalculation) {
-	var calculation = $.extend([], inputCalculation);
-
-	var lastElement = calculation[calculation.length-1];
-	if (lastElement && !isNaN(lastElement)) {
-		return calculation;
-	} else if (lastElement && lastElement.constructor.name == "Operator" || lastElement == '-') {
-		console.log("Removing trailing operator!!!");
-		calculation.pop();
-		return calculation;
-	} else if (lastElement && lastElement.constructor.name == "Calculation") {
-		console.log("ignoreTrailingOperations() - calculation");
-		calculation[calculation.length-1].calculationArray = this.ignoreTrailingOperations(lastElement.calculationArray);
-		if (!lastElement.calculationArray.length > 0) {
-			calculation.pop();
-			return this.ignoreTrailingOperations(calculation);
-		}
-		return calculation;
-	}
-
-	console.log("Nothing triggered in ignoreTrailingOperations");
-
-	return calculation;
-}
-*/
-
 // Returns the answer of this calculation.
 // Recursively solves parentheses as calculation objects of their own.
 Calculation.prototype.runCalculation = function(inputCalculation) {
-	console.log("Entering calculation...");
 	// Create a copy of the calculationArray, to ensure we're not altering the original array.
-	var workingCalculationArray = [];
-	$.extend(workingCalculationArray, inputCalculation);
+	var workingCalculationArray = $.extend([], inputCalculation);
 
-	//workingCalculationArray = this.ignoreTrailingOperations(workingCalculationArray);
-
-	if (workingCalculationArray.length == 0) {
+	if (workingCalculationArray.length == 0 || workingCalculationArray.length == 1 && workingCalculationArray[0] == '-') {
 		return 0;
 	}
 
 	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operator.
 	var i = 0;
 	while (i < workingCalculationArray.length) {
-		if (workingCalculationArray[i] == '-') {
-			console.log("setting '-' to null");
-			workingCalculationArray[i] = null;
-		} else if (workingCalculationArray[i].constructor.name == "Calculation") {
+		if (workingCalculationArray[i].constructor.name == "Calculation") {
 			if (workingCalculationArray[i].calculationArray.length < 1) {
-				workingCalculationArray[i] = null;
+				workingCalculationArray.splice(i);
+				i--;
 			} else {
 				if (workingCalculationArray[i-1] && !isNaN(workingCalculationArray[i-1])) {
 					workingCalculationArray.splice(i, 0, new Operator('*'));
@@ -318,7 +264,6 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 					workingCalculationArray.splice(i+1, 0, new Operator('*'));
 				}
 				if (workingCalculationArray[i].calculationArray.length == 1) {
-					console.log("DOes this rfdgbksd");
 					if (workingCalculationArray[i].calculationArray[0] == '-') {
 						workingCalculationArray.splice(i);
 					} else {
@@ -332,17 +277,7 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 		i++;
 	}
 
-	if (workingCalculationArray.length == 1) {
-		if (workingCalculationArray[0] == null) {
-			workingCalculationArray[0] = 0;
-		} else if (workingCalculationArray[0].constructor.name == "Calculation") {
-			workingCalculationArray[0] = this.runCalculation(workingCalculationArray[0].calculationArray);
-		} else if (workingCalculationArray[0] == '-') {
-			return 0;
-		}
-		return workingCalculationArray[0];
-	}
-
+	// Main Calculation Loop
 	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
 		console.log("Entering main loop");
 		// If the first element is a parenthesis, evaluate it first and replace it with its value.
@@ -390,15 +325,6 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 	
 		// Remove all null values (numbers we've already calculated) from the array.
 		workingCalculationArray = workingCalculationArray.filter(function(n){return n != null});
-		console.log(workingCalculationArray);
-	}
-
-	console.log("At end of calculation...");
-	console.log(calculator.baseCalculation);
-
-	if (workingCalculationArray[0] == null) {
-		console.log("Setting last null value to 0");
-		workingCalculationArray[0] = 0;
 	}
 
 	return workingCalculationArray[0];
@@ -456,8 +382,7 @@ function Screen() {
 	this.inputDisplay = '';
 	this.outputDisplay = '';
 
-	// A string of ')'s to be faintly desplayed after the inputDisplay,
-	// representing the number of currently open parentheses.
+	// A string of ')'s to be faintly desplayed after the inputDisplay, representing the number of currently open parentheses.
 	this.openParentheses = '';
 }
 
@@ -567,7 +492,6 @@ Screen.prototype.equalsAnimation = function(answer) {
 			$('#output-display').css('bottom', '0px');
 			$('#output-display').css('font-size', '30px');
 			calculator.screen.setInputDisplayFontSize();
-			console.log("DONE");
 		} else {
 			calculator.skippingAnimation = false;
 		}
@@ -586,6 +510,8 @@ Screen.prototype.skipEqualsAnimation = function() {
 		$('#output-display').finish();
 		calculator.skippingAnimation = true;
 
+		// Todo - this code is written twice: once here and once in the original function for if the animation is not skipped.
+		// Refactor it so that the code is only actually written once.
 		$('#input-display').text(this.inputDisplay);
 		calculator.screen.clearOutputDisplay();
 		$('#output-display').css('bottom', '0px');
@@ -600,7 +526,6 @@ Screen.prototype.skipEqualsAnimation = function() {
 function InputSystem() {
 	this.pressedKeys = [];
 }
-
 
 // Controls the animation when a button is pressed, either via the mouse or keyboard.
 InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '') {
@@ -695,6 +620,7 @@ InputSystem.prototype.keyboardInput = function(keyCode, shiftKey) {
 	this.buttonHighlightOn(keyId, 'keyboard', keyCode);
 }
 
+// Todo - Refactor this into the InputSystem class.
 Calculator.prototype.buttonPressUp = function(btn, originalBtnColor) {
 	$(btn).css('background-color', originalBtnColor);
 	$(btn).css('color', 'white');
@@ -723,7 +649,7 @@ $(document).ready(function() {
 
 	// Handle key presses
 	$(document).keydown(function(key) {
-		if (/*key.keyCode == 67 || */calculator.inputSystem.pressedKeys.indexOf(key.keyCode) < 0) {
+		if (calculator.inputSystem.pressedKeys.indexOf(key.keyCode) < 0) {
 			calculator.screen.skipEqualsAnimation();
 			var keyCode = parseInt(key.keyCode);
 			calculator.inputSystem.keyboardInput(keyCode, key.shiftKey);
@@ -736,3 +662,7 @@ $(document).ready(function() {
 
 
 var calculator = new Calculator();
+
+
+/* Known Bugs */
+// 
