@@ -273,8 +273,12 @@ Calculation.prototype.insertMultiplicationOperators = function(calculation) {
 	return calculation;
 }
 
-// Returns the answer of this calculation.
-// Recursively solves parentheses as calculation objects of their own.
+// Returns the answer of the calculation.
+// Loops through the calcuation several times, evaluating higher priority operations first, 
+// leaving the lower priority operations to deal with the resulting value on the next loop.
+// For example '1+2*3' would, after the first loop, be simplified to '1+6', as * has a higher priority than '+',
+// therefore associating the '2' with the '*' rather than the '+'.
+// After performing an operation we set the used elements to null, and remove all null values at the end of the loop.
 Calculation.prototype.runCalculation = function(inputCalculation) {
 	// Create a copy of the calculationArray, to ensure we're not altering the original array.
 	var workingCalculationArray = $.extend([], inputCalculation);
@@ -285,47 +289,37 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 
 	workingCalculationArray = this.insertMultiplicationOperators(workingCalculationArray);
 
-	// Main Calculation Loop
+	// Loop through the calculation array multiple times, gradually simplifying it until it contains only one element.
 	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
-		// If the first element is a parenthesis, evaluate it first and replace it with its value.
-		// We specify this since we usually skip the first element in the for loop.
+		
 		if (isNaN(workingCalculationArray[0])) {
 			workingCalculationArray[0] = workingCalculationArray[0].runCalculation(workingCalculationArray[0].calculationArray);
 		}
 		
 		var memory = parseFloat(workingCalculationArray[0]);
 		var currentOperator;
-		
-		for (var i = 1; i < workingCalculationArray.length; i++) {
-			// Check if the object we're looking at is a parenthesis. If so, calculate it first.
-			if (workingCalculationArray[i]) {
-				if (workingCalculationArray[i].constructor.name == "Calculation") {
-					console.log("Running inner calculation");
-					workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i].calculationArray);
-				}
-				console.log(workingCalculationArray[i]);
-				if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1]) {
-					console.log("Assigning current operator");
-					currentOperator = workingCalculationArray[i];
-				} else {
-					// Check if the following operator takes priority by order of operations.
-					if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
-						memory = parseFloat(workingCalculationArray[i]);
-					} else {
-						
-						var safeToCalculate = true;
-						if (workingCalculationArray[i].constructor.name == "Operator") {
-							safeToCalculate = false;
-							workingCalculationArray[i] = null;
-						}
 
-						if (safeToCalculate) {
-							workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
-							memory = workingCalculationArray[i];
-							workingCalculationArray[i-1] = null;
-							workingCalculationArray[i-2] = null;
-						}
-					}
+		for (var i = 1; i < workingCalculationArray.length; i++) {
+			
+			// If the element is a calculation, replace it with the number it evaluates to. 
+			if (workingCalculationArray[i].constructor.name == "Calculation") {
+				workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i].calculationArray);
+			}
+
+			if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1]) {
+				currentOperator = workingCalculationArray[i];
+			} else if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
+				memory = parseFloat(workingCalculationArray[i]);
+			} else {
+				// If, at this point, the current element is an operator, it means the last element of the calculation is an operator.
+				// This would result in an infinite loop since there is nothing to calculate it with (e.g. 3*blank), so it must be removed.
+				if (workingCalculationArray[i].constructor.name == "Operator") {
+					workingCalculationArray[i] = null;
+				} else {
+					workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
+					memory = workingCalculationArray[i];
+					workingCalculationArray[i-1] = null;
+					workingCalculationArray[i-2] = null;
 				}
 			}
 		}
@@ -420,9 +414,9 @@ Screen.prototype.openNewParenthesis = function() {
 	$('#open-parentheses').css('display', 'inline-block');
 }
 
+// Used when adding the closing bracket to a parenthesis.
 Screen.prototype.closeParenthesis = function() {
 	this.updateInputDisplay(')');
-	
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
 	$('#open-parentheses').text(this.openParentheses);
 	
@@ -431,6 +425,7 @@ Screen.prototype.closeParenthesis = function() {
 	}
 }
 
+// Used when removing the closing bracket from a parenthesis.
 Screen.prototype.removeParenthesis = function() {
 	this.replaceLastCharacter('');
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
@@ -449,9 +444,9 @@ Screen.prototype.clearScreen = function() {
 }
 
 // Replace the last character of the input display. For use when user changes mind about which operator to use.
-Screen.prototype.replaceLastCharacter = function(newOperator) {
+Screen.prototype.replaceLastCharacter = function(newCharacter) {
 	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
-	this.inputDisplay += newOperator;
+	this.inputDisplay += newCharacter;
 	$('#input-display').text(this.inputDisplay);
 }
 
