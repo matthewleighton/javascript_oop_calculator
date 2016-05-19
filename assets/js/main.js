@@ -227,17 +227,50 @@ Calculator.prototype.equals = function() {
 /**
 * Calculation Class
 **/
-function Calculation(base = false) {
+function Calculation(isBaseCalculation = false) {
 	// An array to store the numbers and operators making up the calculation.
 	this.calculationArray = [];
 
 	// Specifies whether the parentheses of this calculation are open or have been closed.
-	// This will be set to false when the user enters a ')', signaling the calculator to
-	// ignore the calculation while chosing an input target.
+	// This will be set to false when the user enters a ')', signaling the calculator to ignore the calculation while chosing an input target.
 	this.isOpen = true;
 
 	// Ensures that the base calculation cannot be deleted.
-	this.isBaseCalculation = base;
+	this.isBaseCalculation = isBaseCalculation;
+}
+
+// Insert the implied multiplication operators between parentheses and adjacent parentheses or numbers.
+// E.g. between '1(2+3)' or '(2+3)(4+5)'.
+Calculation.prototype.insertMultiplicationOperators = function(calculation) {
+	var i = 0;
+	while (i < calculation.length) {
+		if (calculation[i].constructor.name == "Calculation") {
+			if (calculation[i].calculationArray.length < 1) {
+				calculation.splice(i);
+				i--;
+			} else {
+				if (calculation[i-1] && !isNaN(calculation[i-1])) {
+					calculation.splice(i, 0, new Operator('*'));
+					i++;
+				}
+				if (calculation[i+1] && (!isNaN(calculation[i+1]) || calculation[i+1].constructor.name == "Calculation")) {
+					calculation.splice(i+1, 0, new Operator('*'));
+				}
+				if (calculation[i].calculationArray.length == 1) {
+					if (calculation[i].calculationArray[0] == '-') {
+						calculation.splice(i);
+					} else {
+						calculation[i] = calculation[i].calculationArray[0];
+						i--;
+					}
+					
+				}	
+			}			
+		}
+		i++;
+	}
+
+	return calculation;
 }
 
 // Returns the answer of this calculation.
@@ -250,38 +283,10 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 		return 0;
 	}
 
-	// Check for any numbers (or parentheses) next to parentheses and insert the required multiplication operator.
-	var i = 0;
-	while (i < workingCalculationArray.length) {
-		if (workingCalculationArray[i].constructor.name == "Calculation") {
-			if (workingCalculationArray[i].calculationArray.length < 1) {
-				workingCalculationArray.splice(i);
-				i--;
-			} else {
-				if (workingCalculationArray[i-1] && !isNaN(workingCalculationArray[i-1])) {
-					workingCalculationArray.splice(i, 0, new Operator('*'));
-					i++;
-				}
-				if (workingCalculationArray[i+1] && (!isNaN(workingCalculationArray[i+1]) || workingCalculationArray[i+1].constructor.name == "Calculation")) {
-					workingCalculationArray.splice(i+1, 0, new Operator('*'));
-				}
-				if (workingCalculationArray[i].calculationArray.length == 1) {
-					if (workingCalculationArray[i].calculationArray[0] == '-') {
-						workingCalculationArray.splice(i);
-					} else {
-						workingCalculationArray[i] = workingCalculationArray[i].calculationArray[0];
-						i--;
-					}
-					
-				}	
-			}			
-		}
-		i++;
-	}
+	workingCalculationArray = this.insertMultiplicationOperators(workingCalculationArray);
 
 	// Main Calculation Loop
 	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
-		console.log("Entering main loop");
 		// If the first element is a parenthesis, evaluate it first and replace it with its value.
 		// We specify this since we usually skip the first element in the for loop.
 		if (isNaN(workingCalculationArray[0])) {
