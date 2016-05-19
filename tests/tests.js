@@ -1066,7 +1066,16 @@ QUnit.test("Pressing enter resets the base calculation array to a new array cont
 	//assert.equal(testCalculator.screen.inputDisplay, '3', "Input screen displays '3'");
 	// Todo - this last assert is NOT passing in the test suite, although the same behavior appears to work in the actual calculator.
 	// Figure out why.
+});
 
+QUnit.test("Running the equals function will be ignored if the calculation array does not actualyl contain anything to be calculated. e.g. '1+'", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1');
+	testCalculator.receiveInput('+');
+	testCalculator.equals();
+
+	assert.equal(testCalculator.screen.outputDisplay, '', "The output screen is still empty after running equals()");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 2, "The calculation array contains 2 elements");
 });
 
 QUnit.test("The calculation will not be evaluated until the base calculation array contains at least three elements or two calculations", function(assert) {

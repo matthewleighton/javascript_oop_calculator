@@ -215,11 +215,13 @@ Calculator.prototype.calculateAll = function() {
 
 // Starts a new base calculation, containing only the result of the previous calculation.
 Calculator.prototype.equals = function() {
-	this.screen.closeAllParentheses();
-	var answer = this.calculateAll().toString();
-	this.baseCalculation = new Calculation(true);
-	this.baseCalculation.calculationArray.push(answer);
-	this.screen.equalsAnimation(answer);
+	if (this.readyToCalculate(this.baseCalculation)) {
+		var answer = this.calculateAll().toString();
+		this.screen.closeAllParentheses();
+		this.baseCalculation = new Calculation(true);
+		this.baseCalculation.calculationArray.push(answer);
+		this.screen.equalsAnimation(answer);
+	}
 }
 
 /**
