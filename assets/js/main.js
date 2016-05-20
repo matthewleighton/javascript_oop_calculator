@@ -98,6 +98,8 @@ Calculator.prototype.receiveInput = function(inputValue) {
 			return;
 		}
 
+		// Todo - Refactor these into else if's, rather than seperate if statements?
+
 		// If the previous input is also an operator, replace it with the new one.
 		if (currentCalculation[currentCalculation.length-1].constructor.name == "Operator") {
 			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
@@ -143,13 +145,13 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 Calculator.prototype.removePreviousInput = function() {
 	var currentCalculation = this.findInputTarget(this.baseCalculation);
 
-	// Check if the current calculation is empty. Only remove if it is NOT the base calculation.
+	// If the current calculation is empty this means it should be removed, but only if it is NOT the base calculation.
 	if (currentCalculation.calculationArray.length == 0) {
 		if (!currentCalculation.isBaseCalculation) {
 			currentCalculation.isOpen = false;
 			var outerCalculation = this.findInputTarget(this.baseCalculation).calculationArray;
 			outerCalculation.pop();
-			this.screen.removeParenthesis();
+			this.screen.removeOpeningParenthesis();
 			this.calculateAll();
 		}
 		return;
@@ -195,6 +197,8 @@ Calculator.prototype.isValidOperator = function(inputValue) {
 	return (this.validOperators.indexOf(inputValue) >= 0) ? true : false;
 }
 
+// Prevents the calculation from running when there isn't actually anything to calculate.
+// For example '1', '2+', '(3)', or '(4+'.
 Calculator.prototype.readyToCalculate = function(calculation) {
 	var baseArray = calculation.calculationArray;
 	if (baseArray.length > 2) {
@@ -267,7 +271,6 @@ Calculation.prototype.insertMultiplicationOperators = function(calculation) {
 						calculation[i] = calculation[i].calculationArray[0];
 						i--;
 					}
-					
 				}	
 			}			
 		}
@@ -300,6 +303,7 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 			workingCalculationArray[0] = workingCalculationArray[0].runCalculation(workingCalculationArray[0].calculationArray);
 		}
 		
+		// The number we'll be using on the left hand side of the operator. (E.g. '1' in '1+2').
 		var memory = parseFloat(workingCalculationArray[0]);
 		var currentOperator;
 
@@ -429,14 +433,19 @@ Screen.prototype.closeParenthesis = function() {
 	}
 }
 
-// Used when removing the closing bracket from a parenthesis.
-Screen.prototype.removeParenthesis = function() {
+Screen.prototype.removeOpeningParenthesis = function() {
 	this.replaceLastInputCharacter('');
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
 	$('#open-parentheses').text(this.openParentheses);
 	if (this.openParentheses == '') {
 		$('#open-parentheses').css('display', 'none');
 	}
+}
+
+Screen.prototype.closeAllParentheses = function() {
+	this.openParentheses = '';
+	$('#open-parentheses').empty();
+	$('#open-parentheses').css('display', 'none');
 }
 
 Screen.prototype.clearScreen = function() {
@@ -447,7 +456,7 @@ Screen.prototype.clearScreen = function() {
 	calculator.screen.openParentheses = '';
 }
 
-// Replace the last character of the input display. For use when user changes mind about which operator to use.
+// Replace the last character of the input display. For use when user changes their mind about which operator to use.
 Screen.prototype.replaceLastInputCharacter = function(newCharacter) {
 	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
 	this.inputDisplay += newCharacter;
@@ -462,12 +471,6 @@ Screen.prototype.setInputDisplayFontSize = function() {
 	$('#open-parentheses').css('font-size', inputFontSize);
 }
 
-Screen.prototype.closeAllParentheses = function() {
-	this.openParentheses = '';
-	$('#open-parentheses').empty();
-	$('#open-parentheses').css('display', 'none');
-}
-
 // Returns the correct font size for the input display, based on how many characters it contains.
 Screen.prototype.findCorrectFontSize = function() {
 	var inputCharacters = this.inputDisplay.length;
@@ -479,12 +482,6 @@ Screen.prototype.findCorrectFontSize = function() {
 	} else {
 		return 18;
 	}
-}
-
-Screen.prototype.resetPositionsAfterEqualsAnimation = function() {
-	this.clearOutputDisplay();
-	$('#output-display').css('bottom', '0px');
-	$('#output-display').css('font-size', '30px');
 }
 
 Screen.prototype.equalsAnimation = function(answer) {
@@ -502,15 +499,19 @@ Screen.prototype.equalsAnimation = function(answer) {
 			$('#input-display').text(calculator.screen.inputDisplay);
 			calculator.screen.resetPositionsAfterEqualsAnimation();
 			calculator.screen.setInputDisplayFontSize();
+			console.log(this);
 		} else {
 			calculator.skippingAnimation = false;
 		}
 	}, 600);
 }
 
+Screen.prototype.resetPositionsAfterEqualsAnimation = function() {
+	this.clearOutputDisplay();
+	$('#output-display').css('bottom', '0px');
+	$('#output-display').css('font-size', '30px');
+}
 
-
-// If the 'equals' animation is currently running, skip to the end of it.
 Screen.prototype.skipEqualsAnimation = function() {
 	if ($('#output-display').is(':animated')) {
 		$('#output-display').finish();
@@ -529,7 +530,7 @@ function InputSystem() {
 	this.pressedKeys = [];
 }
 
-// Controls the animation when a button is pressed, either via the mouse or keyboard.
+// Controls the animation when a button is pressed via either the mouse or keyboard.
 InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '') {
 	if (inputMethod == 'keyboard') {
 		btn = $('#btn-' + btn);
@@ -541,7 +542,7 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 
 	if (inputMethod == 'mouse') {
 		$(btn).mouseleave(function() {
-			calculator.buttonPressUp(btn, originalBtnColor);
+			calculator.inputSystem.buttonHighlightOff(btn, originalBtnColor);
 		});
 	} else {
 		$(document).keyup(function() {
@@ -550,9 +551,14 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 				calculator.inputSystem.pressedKeys.splice(index);
 			}
 
-			calculator.buttonPressUp(btn, originalBtnColor);
+			calculator.inputSystem.buttonHighlightOff(btn, originalBtnColor);
 		});
 	}
+}
+
+InputSystem.prototype.buttonHighlightOff = function(btn, originalBtnColor) {
+	$(btn).css('background-color', originalBtnColor);
+	$(btn).css('color', 'white');
 }
 
 InputSystem.prototype.keyboardInput = function(keyCode, shiftKey) {
@@ -622,12 +628,6 @@ InputSystem.prototype.keyboardInput = function(keyCode, shiftKey) {
 	this.buttonHighlightOn(keyId, 'keyboard', keyCode);
 }
 
-// Todo - Refactor this into the InputSystem class.
-Calculator.prototype.buttonPressUp = function(btn, originalBtnColor) {
-	$(btn).css('background-color', originalBtnColor);
-	$(btn).css('color', 'white');
-}
-
 $(document).ready(function() {
 	
 	// Mouse hovers over calculator button.
@@ -635,7 +635,7 @@ $(document).ready(function() {
 		calculator.inputSystem.buttonHighlightOn(this, 'mouse');
 	});
 
-	// Handle mouse clicks 
+	// Handle mouse clicks. 
 	$('.btn').mousedown(function() {
 		calculator.screen.skipEqualsAnimation();
 		var btnValue = $(this).text().trim();
@@ -649,7 +649,7 @@ $(document).ready(function() {
 		}
 	});
 
-	// Handle key presses
+	// Handle key presses.
 	$(document).keydown(function(key) {
 		if (calculator.inputSystem.pressedKeys.indexOf(key.keyCode) < 0) {
 			calculator.screen.skipEqualsAnimation();
@@ -660,11 +660,4 @@ $(document).ready(function() {
 
 });
 
-
-
-
 var calculator = new Calculator();
-
-
-/* Known Bugs */
-// 
