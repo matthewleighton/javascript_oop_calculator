@@ -16,6 +16,7 @@ function Calculator() {
 	this.screen = new Screen;
 	this.inputSystem = new InputSystem;
 	this.validOperators = ['+', '-', '*', '/', '^'];
+	this.firstInputAfterEquals = false;
 }
 
 // Returns the calculation object which the inputted value should be entered into.
@@ -42,9 +43,23 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 // Recieve an input from the user, and 
 // Add either a digit or operator onto the current operation.
 Calculator.prototype.receiveInput = function(inputValue) {
+	
+	// Regarding receiving the first input after running the equals() function.
+	if (this.firstInputAfterEquals) {
+		if (this.screen.inputDisplay == 'Infinity' && (!this.isValidOperator(inputValue) || inputValue == '-')) {
+			this.screen.clearScreen();
+		} else if (this.screen.inputDisplay == 'Infinity') {
+			return;
+		} else if (!this.isValidOperator(inputValue)) {
+			this.baseCalculation = new Calculation(true);
+			this.screen.clearScreen();
+		}
+	}
+	this.firstInputAfterEquals = false;
+
 	var closeParenthesis = inputValue == ')' ? true : false;
 	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
-	var lastElement = currentCalculation[currentCalculation.length-1];	
+	var lastElement = currentCalculation[currentCalculation.length-1];
 
 	// If the lastElement is a number, the variable 'lastInput' is its final digit.
 	if (!isNaN(lastElement)) {
@@ -145,7 +160,7 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 Calculator.prototype.removePreviousInput = function() {
 	var currentCalculation = this.findInputTarget(this.baseCalculation);
 
-	// If the current calculation is empty this means it should be removed, but only if it is NOT the base calculation.
+	// The current calculation should be removed if it is empty, but only if it is NOT the base calculation.
 	if (currentCalculation.calculationArray.length == 0) {
 		if (!currentCalculation.isBaseCalculation) {
 			currentCalculation.isOpen = false;
@@ -225,11 +240,44 @@ Calculator.prototype.calculateAll = function() {
 Calculator.prototype.equals = function() {
 	if (this.readyToCalculate(this.baseCalculation)) {
 		var answer = this.calculateAll().toString();
-		this.screen.closeAllParentheses();
 		this.baseCalculation = new Calculation(true);
-		this.baseCalculation.calculationArray.push(answer);
+		if (answer != 'Infinity') {
+			this.baseCalculation.calculationArray.push(answer);
+		}
+		this.firstInputAfterEquals = true;
+		console.log("firstInputAfterEquals set to true");
+		answer = this.convertScientificNotation(answer);
+		this.screen.closeAllParentheses();
 		this.screen.equalsAnimation(answer);
+
+		console.log("input display:");
+		console.log(calculator.screen.inputDisplay);
 	}
+}
+
+// If an answer is returned in scientific notation, translate it into an input the calculator can process.
+// E.g. '55e+123' becomes '55*10^123'.
+Calculator.prototype.convertScientificNotation = function(answer) {
+	var indexOfE = answer.indexOf('e');
+	if (answer.indexOf('e') > -1) {	
+		var numberOfTens = answer.substring(0, indexOfE);
+		var indexofPlus = answer.indexOf('+');
+		var exponent = answer.substring(indexofPlus+1, answer.length);
+		
+		answer = '(' + numberOfTens + '*10^' + exponent + ')';
+		this.screen.updateOutputDisplay(answer);
+
+		this.baseCalculation = new Calculation(true);
+		this.receiveInput('(');
+		this.baseCalculation.calculationArray[0].calculationArray[0] = numberOfTens;
+		this.baseCalculation.calculationArray[0].calculationArray[1] = new Operator('*');
+		this.baseCalculation.calculationArray[0].calculationArray[2] = '10';
+		this.baseCalculation.calculationArray[0].calculationArray[3] = new Operator('^');
+		this.baseCalculation.calculationArray[0].calculationArray[4] = exponent;
+		this.receiveInput(')');
+	}
+
+	return answer;
 }
 
 /**

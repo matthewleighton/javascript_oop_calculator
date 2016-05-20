@@ -1156,6 +1156,53 @@ QUnit.test("A calcualtion containing only a number and one sub-calculation will 
 	assert.equal(testCalculator.screen.outputDisplay, '6', "After inputting'2(3)' the output display will contain '6'");
 });
 
+QUnit.test("Calculations resulting in scientific notation are correctly translated to calculator readable input upon equals()", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('^');
+	testCalculator.receiveInput('7');
+	testCalculator.receiveInput('0');
+	assert.equal(testCalculator.screen.outputDisplay, '1.1805916207174113e+21', "After inputting '2^70', the output display shows '1.1805916e21'");
+
+	testCalculator.equals();
+	assert.equal(testCalculator.screen.inputDisplay, '(1.1805916207174113*10^21)', "After running equals(), the input display shows (1.1805916207174113*10^21)");
+});
+
+/* 
+Todo - This passes in practice, but not in the test suite. The input display is seemingly not being reset after equals();
+I think this might be an issue caused by the time taken by the animation after equals() is triggered.
+
+QUnit.test("If input display shows 'Infinity', the calculation array will be reset and any input will begin a new calculation", function(assert) {
+	assert.expect(5);
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('^');
+	testCalculator.receiveInput('9');
+	testCalculator.receiveInput('9');
+	testCalculator.receiveInput('9');
+	testCalculator.receiveInput('9');
+	assert.equal(testCalculator.screen.outputDisplay, 'Infinity', "After inputting '2^9999', output display shows 'Infinity'");
+
+	testCalculator.equals();
+	//testCalculator.screen.skipEqualsAnimation();
+	assert.equal(testCalculator.screen.inputDisplay, 'Infinity', "Input display shows 'Infinity' after pressing equals");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "Base calculation array is now empty");
+
+	var done1 = assert.async();
+	var done2 = assert.async();
+
+	setTimeout(function() {
+		
+		assert.equal(testCalculator.screen.inputDisplay, '1');
+		done1();
+		assert.equal(testCalculator.baseCalculation.calculationArray[0], '1', "First element of the calculation array is '1'");
+		done2();
+	}, 650);	
+});
+*/
+
+
+
 /*QUnit.test("10/3 = 3.3333333333", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
