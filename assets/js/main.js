@@ -1,8 +1,12 @@
-// Todo - Implement some kind of rounding, to avoid gettings irrational results.
+// Todo - Implement some kind of rounding, to avoid gettings irrational results, and also fix things such as 10/3 resulting in 3.333333335.
 
 // Todo - Prevent equals button from being used when there isn't actually anything to calculate.
 
 // Todo - If output display says 'Infinity', the calculation array should be reset to empty, so that the next input will start a new calculation.
+
+// Todo - There are issues with using 'C' when the input value contains an 'e' as in large exponent results (e.g. '12345e+67').
+// When using equals, if the answer contains an e, it should be translated to include the '*10' and exponent sign.
+// For example '12345e+67' becomes '12345*10^67'.
 
 /**
 * Calculator Class
@@ -53,7 +57,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
-			this.screen.replaceLastCharacter('');
+			this.screen.replaceLastInputCharacter('');
 		}
 		return;
 	}
@@ -74,7 +78,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		if (lastElement == '0') {
 			currentCalculation.pop();
 			console.log(currentCalculation);
-			this.screen.replaceLastCharacter('');
+			this.screen.replaceLastInputCharacter('');
 			lastElement = currentCalculation[currentCalculation.length-1];
 		}
 
@@ -97,13 +101,13 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		// If the previous input is also an operator, replace it with the new one.
 		if (currentCalculation[currentCalculation.length-1].constructor.name == "Operator") {
 			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
-			calculator.screen.replaceLastCharacter(inputValue);
+			calculator.screen.replaceLastInputCharacter(inputValue);
 			return;
 		}
 
 		if (finalDigit == '.') {
 			currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
-			this.screen.replaceLastCharacter('');
+			this.screen.replaceLastInputCharacter('');
 		}
 		this.pushInput(currentCalculation, new Operator(inputValue), inputValue);
 
@@ -158,18 +162,18 @@ Calculator.prototype.removePreviousInput = function() {
 	if (!isNaN(lastElement)) {
 		// Remove the last digit of the number
 		currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
-		this.screen.replaceLastCharacter('');
+		this.screen.replaceLastInputCharacter('');
 		if (currentCalculation[currentCalculation.length-1].length == 0) {
 			currentCalculation.pop();
 		}
 	} else if (lastElement.constructor.name == "Operator" || lastElement == '-') {
 		// Remove the last operator.
 		currentCalculation.pop();
-		this.screen.replaceLastCharacter('');
+		this.screen.replaceLastInputCharacter('');
 	} else if (!lastElement.isOpen) {
 		// If the last element is a closed parenthesis, open it, removing the closing bracket.
 		currentCalculation[currentCalculation.length-1].isOpen = true;
-		this.screen.replaceLastCharacter('');
+		this.screen.replaceLastInputCharacter('');
 		this.screen.openNewParenthesis();
 	}
 
@@ -427,7 +431,7 @@ Screen.prototype.closeParenthesis = function() {
 
 // Used when removing the closing bracket from a parenthesis.
 Screen.prototype.removeParenthesis = function() {
-	this.replaceLastCharacter('');
+	this.replaceLastInputCharacter('');
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
 	$('#open-parentheses').text(this.openParentheses);
 	if (this.openParentheses == '') {
@@ -444,13 +448,13 @@ Screen.prototype.clearScreen = function() {
 }
 
 // Replace the last character of the input display. For use when user changes mind about which operator to use.
-Screen.prototype.replaceLastCharacter = function(newCharacter) {
+Screen.prototype.replaceLastInputCharacter = function(newCharacter) {
 	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
 	this.inputDisplay += newCharacter;
 	$('#input-display').text(this.inputDisplay);
 }
 
-// Resizes the font based on the numer of characters in the input/output display.
+// Resizes the font based on the numer of characters in the input display.
 Screen.prototype.setInputDisplayFontSize = function() {
 	var inputFontSize = this.findCorrectFontSize();
 
@@ -477,34 +481,34 @@ Screen.prototype.findCorrectFontSize = function() {
 	}
 }
 
+Screen.prototype.resetPositionsAfterEqualsAnimation = function() {
+	this.clearOutputDisplay();
+	$('#output-display').css('bottom', '0px');
+	$('#output-display').css('font-size', '30px');
+}
+
 Screen.prototype.equalsAnimation = function(answer) {
 	var originalFontSize = $('#output-display').css('font-size');
+	var fontSize = calculator.screen.findCorrectFontSize();
 	this.inputDisplay = answer;
+	
 	$('#input-display').text('');
+	$('#output-display').animate({"font-size":fontSize, "bottom": "66px"}, 500);
 
-	var animateOutput = function() {
-		fontSize = calculator.screen.findCorrectFontSize();
-		$('#output-display').animate({"font-size":fontSize, "bottom": "66px"}, 500);
-	}
-
-	var resetPositions = function(answer) {
+	// If the user enters another input before the animation has finished, the positions will be reset via 
+	// the skipEqualsAnimation() function before the timeout completes, and will be skipped here.
+	setTimeout(function() {
 		if (!calculator.skippingAnimation) {
 			$('#input-display').text(calculator.screen.inputDisplay);
-			calculator.screen.clearOutputDisplay();
-			$('#output-display').css('bottom', '0px');
-			$('#output-display').css('font-size', '30px');
+			calculator.screen.resetPositionsAfterEqualsAnimation();
 			calculator.screen.setInputDisplayFontSize();
 		} else {
 			calculator.skippingAnimation = false;
 		}
-	}
-
-	animateOutput();
-	setTimeout(function() {
-		resetPositions(answer);
 	}, 600);
-
 }
+
+
 
 // If the 'equals' animation is currently running, skip to the end of it.
 Screen.prototype.skipEqualsAnimation = function() {
@@ -512,12 +516,8 @@ Screen.prototype.skipEqualsAnimation = function() {
 		$('#output-display').finish();
 		calculator.skippingAnimation = true;
 
-		// Todo - this code is written twice: once here and once in the original function for if the animation is not skipped.
-		// Refactor it so that the code is only actually written once.
 		$('#input-display').text(this.inputDisplay);
-		calculator.screen.clearOutputDisplay();
-		$('#output-display').css('bottom', '0px');
-		$('#output-display').css('font-size', '30px');
+		this.resetPositionsAfterEqualsAnimation();
 	}		
 }
 
