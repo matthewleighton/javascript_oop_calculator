@@ -169,6 +169,7 @@ Calculator.prototype.removePreviousInput = function() {
 			this.screen.removeOpeningParenthesis();
 			this.calculateAll();
 		}
+		this.screen.clearScreen();
 		return;
 	}
 
@@ -245,13 +246,9 @@ Calculator.prototype.equals = function() {
 			this.baseCalculation.calculationArray.push(answer);
 		}
 		this.firstInputAfterEquals = true;
-		console.log("firstInputAfterEquals set to true");
 		answer = this.convertScientificNotation(answer);
 		this.screen.closeAllParentheses();
 		this.screen.equalsAnimation(answer);
-
-		console.log("input display:");
-		console.log(calculator.screen.inputDisplay);
 	}
 }
 
@@ -570,6 +567,13 @@ Screen.prototype.skipEqualsAnimation = function() {
 	}		
 }
 
+Screen.prototype.cAnimation = function() {
+	//console.log("Running cAnimation");
+	//$('#btn-c').animate({"background-color":"#FF4500"}, 1000);
+	$('#btn-c').animate({"background-color":"pink"}, 500);
+	//$('#btn-c').css('background-color', 'pink');
+}
+
 /**
 * InputSystem Class
 **/
@@ -593,6 +597,17 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 			calculator.inputSystem.buttonHighlightOff(btn, originalBtnColor);
 		});
 	} else {
+		if (btn[0]['id'] == 'btn-c') {
+			calculator.screen.cAnimation();
+			var cButtonDown = true;
+			setTimeout(function() {
+				if (cButtonDown) {
+					calculator.screen.clearScreen();
+					calculator.baseCalculation = new Calculation(true);
+				}
+			}, 1000);
+		}
+
 		$(document).keyup(function() {
 			var index = calculator.inputSystem.pressedKeys.indexOf(keyCode);
 			if (index > -1) {
@@ -600,8 +615,10 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 			}
 
 			calculator.inputSystem.buttonHighlightOff(btn, originalBtnColor);
+			cButtonDown = false;
 		});
 	}
+
 }
 
 InputSystem.prototype.buttonHighlightOff = function(btn, originalBtnColor) {
@@ -670,6 +687,8 @@ InputSystem.prototype.keyboardInput = function(keyCode, shiftKey) {
 	} else if (keyCode == 67 || keyCode == 8 || keyCode == 46) {
 		calculator.removePreviousInput();
 		var keyId = 'c';
+	} else {
+		return;
 	}
 
 	this.pressedKeys.push(keyCode);
@@ -692,6 +711,23 @@ $(document).ready(function() {
 			calculator.equals();
 		} else if (btnValue == 'C') {
 			calculator.removePreviousInput();
+			var cButtonDown = true;
+			calculator.screen.cAnimation();
+			
+			setTimeout(function() {
+				if (cButtonDown) {
+					calculator.screen.clearScreen();
+					calculator.baseCalculation = new Calculation(true);
+				}
+			}, 1000);
+			
+			$('#btn-c').mouseup(function() {
+				cButtonDown = false;
+			});
+
+			$('#btn-c').mouseleave(function() {
+				cButtonDown = false;
+			});
 		} else {
 			calculator.receiveInput(btnValue);
 		}
@@ -705,7 +741,6 @@ $(document).ready(function() {
 			calculator.inputSystem.keyboardInput(keyCode, key.shiftKey);
 		}
 	});
-
 });
 
 var calculator = new Calculator();
