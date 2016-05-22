@@ -368,6 +368,20 @@ QUnit.test("A parenthesis containing only '-' cannot be closed", function(assert
 	assert.equal(testCalculator.baseCalculation.calculationArray[0].isOpen, true, "The inner calculation is still open after trying to close it");
 });
 
+QUnit.test("Closing a parenthesis which ends in an operator will remove teh operator before closing", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput(')');
+
+	console.log(testCalculator.baseCalculation.calculationArray);
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[0].calculationArray.length, 1, "The inner calculation array contains only 1 element");
+	//assert.equal(testCalculator.baseCalculation.calculationArray[0].calculationArray[0], "2", "After entering '(2-)', the '-' has been removed");
+	assert.equal(testCalculator.screen.inputDisplay, '(2)', "Input display shows '(2)'");
+});
+
 QUnit.test("3*(1+2)=9", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('3');
@@ -1199,47 +1213,13 @@ QUnit.test("5+0/2 = 5", function(assert) {
 	assert.equal(testCalculator.calculateAll(), 5);
 });
 
-/* 
-Todo - This passes in practice, but not in the test suite. The input display is seemingly not being reset after equals();
-I think this might be an issue caused by the time taken by the animation after equals() is triggered.
-
-QUnit.test("If input display shows 'Infinity', the calculation array will be reset and any input will begin a new calculation", function(assert) {
-	assert.expect(5);
-	testCalculator = new Calculator;
-	testCalculator.receiveInput('2');
-	testCalculator.receiveInput('^');
-	testCalculator.receiveInput('9');
-	testCalculator.receiveInput('9');
-	testCalculator.receiveInput('9');
-	testCalculator.receiveInput('9');
-	assert.equal(testCalculator.screen.outputDisplay, 'Infinity', "After inputting '2^9999', output display shows 'Infinity'");
-
-	testCalculator.equals();
-	//testCalculator.screen.skipEqualsAnimation();
-	assert.equal(testCalculator.screen.inputDisplay, 'Infinity', "Input display shows 'Infinity' after pressing equals");
-	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "Base calculation array is now empty");
-
-	var done1 = assert.async();
-	var done2 = assert.async();
-
-	setTimeout(function() {
-		
-		assert.equal(testCalculator.screen.inputDisplay, '1');
-		done1();
-		assert.equal(testCalculator.baseCalculation.calculationArray[0], '1', "First element of the calculation array is '1'");
-		done2();
-	}, 650);	
-});
-*/
-
-
-
-/*QUnit.test("10/3 = 3.3333333333", function(assert) {
+QUnit.test("10/3 = 3.3333333333", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('0');
 	testCalculator.receiveInput('/');
 	testCalculator.receiveInput('3');
+	var answer = testCalculator.calculateAll().toString();
 
-	assert.equal(testCalculator.calculateAll(), '3.3333333333');
-});*/
+	assert.equal(answer[answer.length-1], '3', "The last digit of the answer is '3'");
+});

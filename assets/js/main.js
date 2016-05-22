@@ -17,9 +17,12 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
 
 	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {
-		var innerCalculation = lastElement.calculationArray[lastElement.calculationArray.length-1];
+		var innerLastElement = lastElement.calculationArray[lastElement.calculationArray.length-1];
 
-		if (closeParenthesis && innerCalculation && innerCalculation != '-' && (innerCalculation.constructor.name != "Calculation" || !innerCalculation.isOpen)) {
+		if (closeParenthesis && innerLastElement && innerLastElement != '-' && (innerLastElement.constructor.name != "Calculation" || !innerLastElement.isOpen)) {
+			if (innerLastElement.constructor.name == 'Operator') {
+				this.removePreviousInput();
+			}
 			lastElement.isOpen = false;
 			this.screen.closeParenthesis();
 			this.screen.setInputDisplayFontSize();
@@ -232,8 +235,19 @@ Calculator.prototype.readyToCalculate = function(calculation) {
 Calculator.prototype.calculateAll = function() {
 	console.log("----------Running Calculate All----------");
 	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation.calculationArray);
+	currentAnswer = this.roundCalculationAnswer(currentAnswer);
 	this.screen.updateOutputDisplay(currentAnswer);
 	return currentAnswer;
+}
+
+// Shortens an answer to 17 characters, avoiding issues such as 10/3 resulting in 3.33335.
+Calculator.prototype.roundCalculationAnswer = function(answer) {
+	answer = answer.toString();
+	if (answer.length < 17 || answer.indexOf('e') > -1) {
+		return answer;
+	} else {
+		return answer.substring(0, 17);
+	}
 }
 
 // Starts a new base calculation, containing only the result of the previous calculation.
@@ -606,13 +620,6 @@ Screen.prototype.clearAnimation = function() {
 	}, 500);
 }
 
-Screen.prototype.animateCButtonTimer = function() {
-	//console.log("Running cAnimation");
-	//$('#btn-c').animate({"background-color":"#FF4500"}, 1000);
-	$('#btn-c').animate({"background-color":"pink"}, 500);
-	//$('#btn-c').css('background-color', 'pink');
-}
-
 /**
 * InputSystem Class
 **/
@@ -637,7 +644,6 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 		});
 	} else {
 		if (btn[0]['id'] == 'btn-c') {
-			calculator.screen.animateCButtonTimer();
 			var cButtonDown = true;
 			setTimeout(function() {
 				if (cButtonDown) {
@@ -751,7 +757,6 @@ $(document).ready(function() {
 		} else if (btnValue == 'C') {
 			calculator.removePreviousInput();
 			var cButtonDown = true;
-			calculator.screen.animateCButtonTimer();
 			
 			setTimeout(function() {
 				if (cButtonDown) {
