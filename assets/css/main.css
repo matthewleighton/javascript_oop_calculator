@@ -11,6 +11,7 @@
 #calculator-body {
   border-radius: 3px;
   height: 420px;
+  overflow: hidden;
   width: 350px; }
 
 #screen {
@@ -18,25 +19,29 @@
   color: #4D4D4D;
   height: 140px;
   overflow: hidden;
-  width: 350px; }
+  position: relative;
+  z-index: -1; }
   #screen div {
-    float: right;
-    padding: 5px 10px 5px 10px; }
+    float: right; }
 
 #input-display {
   display: inline-block;
-  float: right;
-  font-size: 30px; }
+  font-size: 30px;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 5px 10px 5px 10px;
+  /*background-color: pink;*/ }
 
 #open-parentheses {
   color: #B5B5B5;
-  display: none;
-  float: right;
+  /*display: none;*/
   font-size: 30px;
-  padding: 5px 0px 5px 0px; }
+  white-space: nowrap;
+  /*background-color: green;*/ }
 
 #output-display {
   font-size: 30px;
+  padding: 5px 10px 5px 10px;
   position: relative; }
 
 .btn {
@@ -51,7 +56,9 @@
 
 #number-btn-area, #operation-btn-area {
   display: inline-block;
-  height: 280px; }
+  height: 280px;
+  position: relative;
+  z-index: 1; }
 
 #number-btn-area {
   border-radius: 0px 0px 0px 2px;
@@ -67,5 +74,16 @@
 
 .operation-btn {
   background-color: #848484; }
+
+#clear-animation {
+  background-color: #7EC0EE;
+  border-radius: 360px;
+  bottom: 270px;
+  right: 20px;
+  height: 400px;
+  margin: 0 auto;
+  position: relative;
+  width: 400px;
+  z-index: -1; }
 
 /*# sourceMappingURL=main.css.map */

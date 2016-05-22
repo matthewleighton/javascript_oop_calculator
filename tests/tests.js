@@ -359,6 +359,15 @@ QUnit.test("Can close a parenthesis and then perform an operator on it", functio
 	assert.equal(testCalculator.calculateAll(), 4, "'(1+1)*2' = 4");
 });
 
+QUnit.test("A parenthesis containing only '-' cannot be closed", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput(')');
+
+	assert.equal(testCalculator.baseCalculation.calculationArray[0].isOpen, true, "The inner calculation is still open after trying to close it");
+});
+
 QUnit.test("3*(1+2)=9", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('3');
@@ -1166,6 +1175,28 @@ QUnit.test("Calculations resulting in scientific notation are correctly translat
 
 	testCalculator.equals();
 	assert.equal(testCalculator.screen.inputDisplay, '(1.1805916207174113*10^21)', "After running equals(), the input display shows (1.1805916207174113*10^21)");
+});
+
+QUnit.test("5-0*2 = 5", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('-');
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('*');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), 5);
+});
+
+QUnit.test("5+0/2 = 5", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('5');
+	testCalculator.receiveInput('+');
+	testCalculator.receiveInput('0');
+	testCalculator.receiveInput('/');
+	testCalculator.receiveInput('2');
+
+	assert.equal(testCalculator.calculateAll(), 5);
 });
 
 /* 

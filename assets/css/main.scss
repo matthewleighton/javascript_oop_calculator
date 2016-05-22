@@ -25,6 +25,7 @@ $input-and-parentheses-size: 30px;
 #calculator-body {
 	border-radius: 3px;
 	height: $total-height;
+	overflow: hidden;
 	width: $total-width;
 }
 
@@ -33,29 +34,35 @@ $input-and-parentheses-size: 30px;
 	color: $display-screen-text;
 	height: (2/6)*$total-height;
 	overflow: hidden;
-	width: $total-width;
+	position: relative;
+	z-index: -1;
 	div {
 		float: right;
-		padding: 5px 10px 5px 10px;
+		
 	}
 }
 
 #input-display {
 	display: inline-block;
-	float: right;
 	font-size: $input-and-parentheses-size;
+	overflow: hidden;
+	white-space: nowrap;
+	padding: 5px 10px 5px 10px;
+	/*background-color: pink;*/
 }
 
 #open-parentheses {
 	color: #B5B5B5;
-	display: none;
-	float: right;
+	/*display: none;*/
 	font-size: $input-and-parentheses-size;
-	padding: 5px 0px 5px 0px;
+	
+	white-space: nowrap;
+	/*background-color: green;*/
 }
 
 #output-display {
 	font-size: 30px;
+	padding: 5px 10px 5px 10px;
 	position: relative;
 }
 
@@ -75,6 +82,8 @@ $input-and-parentheses-size: 30px;
 #number-btn-area, #operation-btn-area {
 	display: inline-block;
 	height: (4/6)*$total-height;
+	position: relative;
+	z-index: 1;
 }
 
 #number-btn-area {
@@ -94,4 +103,17 @@ $input-and-parentheses-size: 30px;
 
 .operation-btn {
 	background-color: $operation-btn-color;
+}
+
+$clear-aimation-size: 400px;
+#clear-animation {
+	background-color: #7EC0EE;
+	border-radius: 360px;
+	bottom: 270px;
+	right: 20px;
+	height: $clear-aimation-size;
+	margin: 0 auto;
+	position: relative;
+	width: $clear-aimation-size;
+	z-index: -1;	
 }

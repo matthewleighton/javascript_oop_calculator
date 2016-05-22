@@ -9,7 +9,7 @@
 <body>
 <div id='calculator-body'>
 	<div id='screen'>
-		<span id='open-parentheses'></span>
+		
 		<div id='input-display'>
 		</div><br><br><br>
 		<div id='output-display'>
@@ -63,6 +63,9 @@
 			</div>
 		</div>
 	</div>
+	<div id='clear-animation'></div>
 </div>
+
+
 
 </body>

@@ -1,13 +1,5 @@
 // Todo - Implement some kind of rounding, to avoid gettings irrational results, and also fix things such as 10/3 resulting in 3.333333335.
 
-// Todo - Prevent equals button from being used when there isn't actually anything to calculate.
-
-// Todo - If output display says 'Infinity', the calculation array should be reset to empty, so that the next input will start a new calculation.
-
-// Todo - There are issues with using 'C' when the input value contains an 'e' as in large exponent results (e.g. '12345e+67').
-// When using equals, if the answer contains an e, it should be translated to include the '*10' and exponent sign.
-// For example '12345e+67' becomes '12345*10^67'.
-
 /**
 * Calculator Class
 **/
@@ -22,15 +14,15 @@ function Calculator() {
 // Returns the calculation object which the inputted value should be entered into.
 // For example, if we have several parentheses this will return the last open one.
 Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = false) {
-	// The last element of the calculationArray we're looking at.
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
 
 	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {
 		var innerCalculation = lastElement.calculationArray[lastElement.calculationArray.length-1];
 
-		if (closeParenthesis && innerCalculation && (innerCalculation.constructor.name != "Calculation" || !innerCalculation.isOpen)) {
+		if (closeParenthesis && innerCalculation && innerCalculation != '-' && (innerCalculation.constructor.name != "Calculation" || !innerCalculation.isOpen)) {
 			lastElement.isOpen = false;
 			this.screen.closeParenthesis();
+			this.screen.setInputDisplayFontSize();
 			return calculation;
 		}
 
@@ -74,6 +66,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
 			this.screen.replaceLastInputCharacter('');
 		}
+		this.screen.setInputDisplayFontSize();
 		return;
 	}
 
@@ -92,7 +85,6 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		
 		if (lastElement == '0') {
 			currentCalculation.pop();
-			console.log(currentCalculation);
 			this.screen.replaceLastInputCharacter('');
 			lastElement = currentCalculation[currentCalculation.length-1];
 		}
@@ -119,6 +111,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		if (currentCalculation[currentCalculation.length-1].constructor.name == "Operator") {
 			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
 			calculator.screen.replaceLastInputCharacter(inputValue);
+			this.screen.setInputDisplayFontSize();
 			return;
 		}
 
@@ -167,9 +160,13 @@ Calculator.prototype.removePreviousInput = function() {
 			var outerCalculation = this.findInputTarget(this.baseCalculation).calculationArray;
 			outerCalculation.pop();
 			this.screen.removeOpeningParenthesis();
-			this.calculateAll();
+			
+			// Todo - Refactor this so instead of using the code here, we go down to the version at the bottom of the function.
+			if (this.readyToCalculate(this.baseCalculation)) {
+				this.calculateAll();	
+			}
 		}
-		this.screen.clearScreen();
+		this.screen.setInputDisplayFontSize();
 		return;
 	}
 
@@ -196,11 +193,11 @@ Calculator.prototype.removePreviousInput = function() {
 	}
 
 	if (this.readyToCalculate(this.baseCalculation)) {
-		this.screen.setInputDisplayFontSize();
 		this.calculateAll();
 	} else {
 		this.screen.clearOutputDisplay();
 	}
+	this.screen.setInputDisplayFontSize();
 }
 
 // Returns true if the input value is either a digit or '.'
@@ -225,7 +222,9 @@ Calculator.prototype.readyToCalculate = function(calculation) {
 		return this.readyToCalculate(baseArray[0]);
 	}
 
-	this.screen.updateOutputDisplay('');
+	if (this.screen.outputDisplay != '') {
+		this.screen.updateOutputDisplay('');
+	}
 	return false;
 }
 
@@ -242,11 +241,13 @@ Calculator.prototype.equals = function() {
 	if (this.readyToCalculate(this.baseCalculation)) {
 		var answer = this.calculateAll().toString();
 		this.baseCalculation = new Calculation(true);
+		
 		if (answer != 'Infinity') {
 			this.baseCalculation.calculationArray.push(answer);
 		}
-		this.firstInputAfterEquals = true;
 		answer = this.convertScientificNotation(answer);
+		this.firstInputAfterEquals = true;
+		
 		this.screen.closeAllParentheses();
 		this.screen.equalsAnimation(answer);
 	}
@@ -353,13 +354,18 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 		var currentOperator;
 
 		for (var i = 1; i < workingCalculationArray.length; i++) {
-			
+			if (workingCalculationArray[i].constructor.name == "Operator") {
+				var currentElement = workingCalculationArray[i].operatorName;
+			} else {
+				var currentElement = workingCalculationArray[i];
+			}
+
 			// If the element is a calculation, replace it with the number it evaluates to. 
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
 				workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i].calculationArray);
 			}
 
-			if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1]) {
+			if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1] != null) {
 				currentOperator = workingCalculationArray[i];
 			} else if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
 				memory = parseFloat(workingCalculationArray[i]);
@@ -445,9 +451,12 @@ Screen.prototype.clearInputDislay = function() {
 	$('#input-display').text('');
 }
 
-Screen.prototype.updateInputDisplay = function(value) {
+Screen.prototype.updateInputDisplay = function(value = '') {
 	this.inputDisplay += value;
+	//$('#input-display').text(this.inputDisplay + '<span id=\'open-parentheses\'>' + this.openParentheses + '</span>');
 	$('#input-display').text(this.inputDisplay);
+	$('#input-display').append("<span id='open-parentheses'>" + this.openParentheses + "</span>");
+	//+ "<span id='open-parentheses'>" + this.openParentheses + "</span>");
 }
 
 Screen.prototype.clearOutputDisplay = function() {
@@ -457,14 +466,17 @@ Screen.prototype.clearOutputDisplay = function() {
 
 Screen.prototype.updateOutputDisplay = function(value) {
 	this.outputDisplay = value;
+	var outputFontSize = this.findCorrectFontSize('output');
+	$('#output-display').css('font-size', outputFontSize);
 	$('#output-display').text(value);
 }
 
 Screen.prototype.openNewParenthesis = function() {
+	console.log("test?");
 	this.openParentheses += ')';
 	$('#open-parentheses').text(this.openParentheses);
-	$('#open-parentheses').css('padding', '5px 10px 5px 0px');
-	$('#open-parentheses').css('display', 'inline-block');
+	//$('#open-parentheses').css('padding', '5px 10px 5px 0px');
+	$('#open-parentheses').css('display', 'inline');
 }
 
 // Used when adding the closing bracket to a parenthesis.
@@ -472,10 +484,6 @@ Screen.prototype.closeParenthesis = function() {
 	this.updateInputDisplay(')');
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
 	$('#open-parentheses').text(this.openParentheses);
-	
-	if (this.openParentheses.length == 0) {
-		$('#open-parentheses').css('padding', '5px 0px 5px 0px');
-	}
 }
 
 Screen.prototype.removeOpeningParenthesis = function() {
@@ -505,7 +513,8 @@ Screen.prototype.clearScreen = function() {
 Screen.prototype.replaceLastInputCharacter = function(newCharacter) {
 	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
 	this.inputDisplay += newCharacter;
-	$('#input-display').text(this.inputDisplay);
+	this.updateInputDisplay();
+	//$('#input-display').text(this.inputDisplay);
 }
 
 // Resizes the font based on the numer of characters in the input display.
@@ -516,23 +525,39 @@ Screen.prototype.setInputDisplayFontSize = function() {
 	$('#open-parentheses').css('font-size', inputFontSize);
 }
 
-// Returns the correct font size for the input display, based on how many characters it contains.
-Screen.prototype.findCorrectFontSize = function() {
-	var inputCharacters = this.inputDisplay.length;
-
-	if (inputCharacters < 14) {
-		return 40;
-	} else if (inputCharacters >= 14 && inputCharacters < 25) {
-		return 40-(2*(inputCharacters-14));
+// Returns the correct font size for either the input or output display, based on how many characters it contains.
+Screen.prototype.findCorrectFontSize = function(display = 'input') {
+	if (display == 'input') {
+		var numberOfCharacters = this.inputDisplay.length + this.openParentheses.length;
+		if (numberOfCharacters < 13) {
+			return 40;
+		} else if (numberOfCharacters >= 13 && numberOfCharacters < 20) {
+			var fontSize = 40-(1.8*(numberOfCharacters-13));
+			console.log("Font size is " + fontSize);
+			return fontSize;
+		} else if (numberOfCharacters >= 20 && numberOfCharacters < 25) {
+			var fontSize = 29.2-(1.2*(numberOfCharacters-20));
+			console.log("Font size is " + fontSize);
+			return fontSize;
+		} else {
+			return 23.2;
+		}
 	} else {
-		return 18;
+		var numberOfCharacters = this.outputDisplay.toString().length;
+		if (numberOfCharacters < 18) {
+			return 30;
+		} else if (this.outputDisplay.toString().indexOf('e') > -1) {
+			return 26;
+		} else {
+			return 30-(1*(numberOfCharacters-17));
+		}
 	}
 }
 
 Screen.prototype.equalsAnimation = function(answer) {
 	var originalFontSize = $('#output-display').css('font-size');
-	var fontSize = calculator.screen.findCorrectFontSize();
 	this.inputDisplay = answer;
+	var fontSize = calculator.screen.findCorrectFontSize();
 	
 	$('#input-display').text('');
 	$('#output-display').animate({"font-size":fontSize, "bottom": "66px"}, 500);
@@ -541,7 +566,8 @@ Screen.prototype.equalsAnimation = function(answer) {
 	// the skipEqualsAnimation() function before the timeout completes, and will be skipped here.
 	setTimeout(function() {
 		if (!calculator.skippingAnimation) {
-			$('#input-display').text(calculator.screen.inputDisplay);
+			calculator.screen.updateInputDisplay();
+			//$('#input-display').text(calculator.screen.inputDisplay);
 			calculator.screen.resetPositionsAfterEqualsAnimation();
 			calculator.screen.setInputDisplayFontSize();
 			console.log(this);
@@ -562,12 +588,25 @@ Screen.prototype.skipEqualsAnimation = function() {
 		$('#output-display').finish();
 		calculator.skippingAnimation = true;
 
-		$('#input-display').text(this.inputDisplay);
+		//$('#input-display').text(this.inputDisplay);
+		this.updateInputDisplay();
 		this.resetPositionsAfterEqualsAnimation();
 	}		
 }
 
-Screen.prototype.cAnimation = function() {
+Screen.prototype.clearAnimation = function() {
+	$('#clear-animation').css('opacity', '1');
+	$('#clear-animation').animate({'bottom':'550px'}, 500);
+	setTimeout(function() {
+		calculator.screen.clearScreen();
+		$('#clear-animation').animate({'opacity':'0'}, 200);
+		setTimeout(function() {
+			$('#clear-animation').css('bottom', '270px');
+		}, 200);
+	}, 500);
+}
+
+Screen.prototype.animateCButtonTimer = function() {
 	//console.log("Running cAnimation");
 	//$('#btn-c').animate({"background-color":"#FF4500"}, 1000);
 	$('#btn-c').animate({"background-color":"pink"}, 500);
@@ -598,14 +637,14 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 		});
 	} else {
 		if (btn[0]['id'] == 'btn-c') {
-			calculator.screen.cAnimation();
+			calculator.screen.animateCButtonTimer();
 			var cButtonDown = true;
 			setTimeout(function() {
 				if (cButtonDown) {
-					calculator.screen.clearScreen();
+					calculator.screen.clearAnimation();
 					calculator.baseCalculation = new Calculation(true);
 				}
-			}, 1000);
+			}, 600);
 		}
 
 		$(document).keyup(function() {
@@ -712,14 +751,14 @@ $(document).ready(function() {
 		} else if (btnValue == 'C') {
 			calculator.removePreviousInput();
 			var cButtonDown = true;
-			calculator.screen.cAnimation();
+			calculator.screen.animateCButtonTimer();
 			
 			setTimeout(function() {
 				if (cButtonDown) {
-					calculator.screen.clearScreen();
+					calculator.screen.clearAnimation();
 					calculator.baseCalculation = new Calculation(true);
 				}
-			}, 1000);
+			}, 600);
 			
 			$('#btn-c').mouseup(function() {
 				cButtonDown = false;
