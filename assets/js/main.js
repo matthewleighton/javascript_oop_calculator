@@ -1,5 +1,3 @@
-// Todo - Implement some kind of rounding, to avoid gettings irrational results, and also fix things such as 10/3 resulting in 3.333333335.
-
 /**
 * Calculator Class
 **/
@@ -63,7 +61,6 @@ Calculator.prototype.receiveInput = function(inputValue) {
 
 	// Special case for using a negative number as first input.
 	// Addition causes the calculation to be cleared, while all other operators are ignored.
-	// Todo - Refactor this into the operator input section below.
 	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
@@ -107,8 +104,6 @@ Calculator.prototype.receiveInput = function(inputValue) {
 			}
 			return;
 		}
-
-		// Todo - Refactor these into else if's, rather than seperate if statements?
 
 		// If the previous input is also an operator, replace it with the new one.
 		if (currentCalculation[currentCalculation.length-1].constructor.name == "Operator") {
@@ -164,11 +159,11 @@ Calculator.prototype.removePreviousInput = function() {
 			outerCalculation.pop();
 			this.screen.removeOpeningParenthesis();
 			
-			// Todo - Refactor this so instead of using the code here, we go down to the version at the bottom of the function.
 			if (this.readyToCalculate(this.baseCalculation)) {
 				this.calculateAll();	
 			}
 		}
+
 		this.screen.setInputDisplayFontSize();
 		return;
 	}
@@ -233,7 +228,6 @@ Calculator.prototype.readyToCalculate = function(calculation) {
 
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
-	console.log("----------Running Calculate All----------");
 	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation.calculationArray);
 	currentAnswer = this.roundCalculationAnswer(currentAnswer);
 	this.screen.updateOutputDisplay(currentAnswer);
@@ -467,10 +461,8 @@ Screen.prototype.clearInputDislay = function() {
 
 Screen.prototype.updateInputDisplay = function(value = '') {
 	this.inputDisplay += value;
-	//$('#input-display').text(this.inputDisplay + '<span id=\'open-parentheses\'>' + this.openParentheses + '</span>');
 	$('#input-display').text(this.inputDisplay);
 	$('#input-display').append("<span id='open-parentheses'>" + this.openParentheses + "</span>");
-	//+ "<span id='open-parentheses'>" + this.openParentheses + "</span>");
 }
 
 Screen.prototype.clearOutputDisplay = function() {
@@ -486,10 +478,8 @@ Screen.prototype.updateOutputDisplay = function(value) {
 }
 
 Screen.prototype.openNewParenthesis = function() {
-	console.log("test?");
 	this.openParentheses += ')';
 	$('#open-parentheses').text(this.openParentheses);
-	//$('#open-parentheses').css('padding', '5px 10px 5px 0px');
 	$('#open-parentheses').css('display', 'inline');
 }
 
@@ -500,6 +490,7 @@ Screen.prototype.closeParenthesis = function() {
 	$('#open-parentheses').text(this.openParentheses);
 }
 
+// Used when removing the left-hand bracket to a parenthesis.
 Screen.prototype.removeOpeningParenthesis = function() {
 	this.replaceLastInputCharacter('');
 	this.openParentheses = this.openParentheses.substring(0, this.openParentheses.length-1);
@@ -516,8 +507,8 @@ Screen.prototype.closeAllParentheses = function() {
 }
 
 Screen.prototype.clearScreen = function() {
-	calculator.screen.clearInputDislay();
-	calculator.screen.clearOutputDisplay();
+	this.clearInputDislay();
+	this.clearOutputDisplay();
 	$('#open-parentheses').text('');
 	$('#open-parentheses').css('padding', '5px 0px 5px 0px');
 	calculator.screen.openParentheses = '';
@@ -528,13 +519,11 @@ Screen.prototype.replaceLastInputCharacter = function(newCharacter) {
 	this.inputDisplay = this.inputDisplay.substring(0, this.inputDisplay.length-1);
 	this.inputDisplay += newCharacter;
 	this.updateInputDisplay();
-	//$('#input-display').text(this.inputDisplay);
 }
 
 // Resizes the font based on the numer of characters in the input display.
 Screen.prototype.setInputDisplayFontSize = function() {
 	var inputFontSize = this.findCorrectFontSize();
-
 	$('#input-display').css('font-size', inputFontSize);
 	$('#open-parentheses').css('font-size', inputFontSize);
 }
@@ -547,11 +536,9 @@ Screen.prototype.findCorrectFontSize = function(display = 'input') {
 			return 40;
 		} else if (numberOfCharacters >= 13 && numberOfCharacters < 20) {
 			var fontSize = 40-(1.8*(numberOfCharacters-13));
-			console.log("Font size is " + fontSize);
 			return fontSize;
 		} else if (numberOfCharacters >= 20 && numberOfCharacters < 25) {
 			var fontSize = 29.2-(1.2*(numberOfCharacters-20));
-			console.log("Font size is " + fontSize);
 			return fontSize;
 		} else {
 			return 23.2;
@@ -581,10 +568,8 @@ Screen.prototype.equalsAnimation = function(answer) {
 	setTimeout(function() {
 		if (!calculator.skippingAnimation) {
 			calculator.screen.updateInputDisplay();
-			//$('#input-display').text(calculator.screen.inputDisplay);
 			calculator.screen.resetPositionsAfterEqualsAnimation();
 			calculator.screen.setInputDisplayFontSize();
-			console.log(this);
 		} else {
 			calculator.skippingAnimation = false;
 		}
@@ -602,13 +587,12 @@ Screen.prototype.skipEqualsAnimation = function() {
 		$('#output-display').finish();
 		calculator.skippingAnimation = true;
 
-		//$('#input-display').text(this.inputDisplay);
 		this.updateInputDisplay();
 		this.resetPositionsAfterEqualsAnimation();
 	}		
 }
 
-Screen.prototype.clearAnimation = function() {
+Screen.prototype.runClearAnimation = function() {
 	$('#clear-animation').css('opacity', '1');
 	$('#clear-animation').animate({'bottom':'550px'}, 500);
 	setTimeout(function() {
@@ -647,7 +631,7 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 			var cButtonDown = true;
 			setTimeout(function() {
 				if (cButtonDown) {
-					calculator.screen.clearAnimation();
+					calculator.screen.runClearAnimation();
 					calculator.baseCalculation = new Calculation(true);
 				}
 			}, 600);
@@ -663,7 +647,6 @@ InputSystem.prototype.buttonHighlightOn = function(btn, inputMethod, keyCode = '
 			cButtonDown = false;
 		});
 	}
-
 }
 
 InputSystem.prototype.buttonHighlightOff = function(btn, originalBtnColor) {
@@ -751,7 +734,6 @@ $(document).ready(function() {
 	$('.btn').mousedown(function() {
 		calculator.screen.skipEqualsAnimation();
 		var btnValue = $(this).text().trim();
-		console.log("btnValue = " + btnValue);
 		if (btnValue == '=') {
 			calculator.equals();
 		} else if (btnValue == 'C') {
@@ -760,7 +742,7 @@ $(document).ready(function() {
 			
 			setTimeout(function() {
 				if (cButtonDown) {
-					calculator.screen.clearAnimation();
+					calculator.screen.runClearAnimation();
 					calculator.baseCalculation = new Calculation(true);
 				}
 			}, 600);

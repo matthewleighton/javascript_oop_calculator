@@ -228,7 +228,6 @@ QUnit.test("Correctly handles a calculation including one decimal: 1.5+1=2.5",fu
 	testCalculator.receiveInput('5');
 	testCalculator.receiveInput('+');
 	testCalculator.receiveInput('1');
-	console.log(testCalculator.baseCalculation.calculationArray);
 
 	assert.equal(testCalculator.calculateAll(), '2.5');
 });
@@ -375,10 +374,7 @@ QUnit.test("Closing a parenthesis which ends in an operator will remove teh oper
 	testCalculator.receiveInput('-');
 	testCalculator.receiveInput(')');
 
-	console.log(testCalculator.baseCalculation.calculationArray);
-
 	assert.equal(testCalculator.baseCalculation.calculationArray[0].calculationArray.length, 1, "The inner calculation array contains only 1 element");
-	//assert.equal(testCalculator.baseCalculation.calculationArray[0].calculationArray[0], "2", "After entering '(2-)', the '-' has been removed");
 	assert.equal(testCalculator.screen.inputDisplay, '(2)', "Input display shows '(2)'");
 });
 
@@ -792,9 +788,6 @@ QUnit.test("1(+(-(*(/((( = 1", function(assert) {
 	testCalculator.receiveInput('(');
 	testCalculator.receiveInput('(');
 
-	console.log("calculation array is");
-	console.log(testCalculator.baseCalculation.calculationArray);
-
 	assert.equal(testCalculator.calculateAll(), 1);
 });
 
@@ -1011,8 +1004,7 @@ QUnit.test("c successfully removes several sets of parentheses", function(assert
 	testCalculator.removePreviousInput();
 	assert.equal(testCalculator.baseCalculation.calculationArray.length, 4, "After pressing c once the array still contains 4 elements");
 	var lastElement = testCalculator.baseCalculation.calculationArray[testCalculator.baseCalculation.calculationArray.length-1];
-	console.log("LAST ELEMENT IS");
-	console.log(lastElement);
+
 	assert.equal(lastElement.isOpen, true, "After pressing c the last inner-calculation is now open");
 	assert.equal(testCalculator.screen.inputDisplay, '(2)(3)4(5', "The input screen shows '(2)(3)4(5'");	
 });
