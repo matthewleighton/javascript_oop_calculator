@@ -11,6 +11,7 @@
 #calculator-body {
   border-radius: 3px;
   height: 420px;
+  float: left;
   overflow: hidden;
   width: 350px; }
 
@@ -85,5 +86,43 @@
   position: relative;
   width: 400px;
   z-index: -1; }
+
+#description-area {
+  border: 1px solid black;
+  border-radius: 5px;
+  display: inline-block;
+  height: 650px;
+  position: relative;
+  top: 10px;
+  left: 20px;
+  width: 850px; }
+  #description-area h1 {
+    font-size: 25px;
+    text-align: center; }
+
+#description-summary {
+  display: inline-block; }
+
+.description-page {
+  display: none; }
+
+#sidebar {
+  background-color: #14141e;
+  border-right: 1px solid blue;
+  color: #b2b2d8;
+  float: left;
+  height: 100%;
+  width: 120px; }
+  #sidebar ul {
+    margin-top: 0;
+    padding: 0;
+    list-style-type: none; }
+    #sidebar ul :first-child {
+      border-radius: 4px 0 0 0; }
+    #sidebar ul li {
+      border-bottom: 1px solid green;
+      cursor: pointer;
+      padding: 35px 0;
+      text-align: center; }
 
 /*# sourceMappingURL=main.css.map */

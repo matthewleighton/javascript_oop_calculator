@@ -228,7 +228,8 @@ Calculator.prototype.readyToCalculate = function(calculation) {
 
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
-	var currentAnswer = this.baseCalculation.runCalculation(this.baseCalculation.calculationArray);
+	console.log("----- Running CalculateAll() -----");
+	var currentAnswer = this.baseCalculation.runCalculation();
 	currentAnswer = this.roundCalculationAnswer(currentAnswer);
 	this.screen.updateOutputDisplay(currentAnswer);
 	return currentAnswer;
@@ -240,7 +241,7 @@ Calculator.prototype.roundCalculationAnswer = function(answer) {
 	if (answer.length < 17 || answer.indexOf('e') > -1) {
 		return answer;
 	} else {
-		return answer.substring(0, 17);
+		return answer.substring(0, 16);
 	}
 }
 
@@ -306,31 +307,32 @@ function Calculation(isBaseCalculation = false) {
 Calculation.prototype.insertMultiplicationOperators = function(calculation) {
 	var i = 0;
 	while (i < calculation.length) {
-		if (calculation[i].constructor.name == "Calculation") {
-			if (calculation[i].calculationArray.length < 1) {
-				calculation.splice(i);
-				i--;
-			} else {
-				if (calculation[i-1] && !isNaN(calculation[i-1])) {
-					calculation.splice(i, 0, new Operator('*'));
-					i++;
-				}
-				if (calculation[i+1] && (!isNaN(calculation[i+1]) || calculation[i+1].constructor.name == "Calculation")) {
-					calculation.splice(i+1, 0, new Operator('*'));
-				}
-				if (calculation[i].calculationArray.length == 1) {
-					if (calculation[i].calculationArray[0] == '-') {
-						calculation.splice(i);
-					} else {
-						calculation[i] = calculation[i].calculationArray[0];
-						i--;
-					}
-				}	
-			}			
+		if (calculation[i] && i % 2 == 1 && calculation[i].constructor.name != "Operator") {
+			calculation.splice(i, 0, new Operator('*'));
 		}
+
 		i++;
 	}
+	return calculation;
+}
 
+// Removes any empty calculations from the end of a calculation array.
+Calculation.prototype.removeEmptyCalculations = function(calculation) {
+	var lastElement = calculation[calculation.length-1]
+
+	if (lastElement && lastElement.constructor.name == "Calculation") {
+		if (lastElement.calculationArray.length == 1) {
+			if (lastElement.calculationArray[0] == '-') {
+				calculation.pop();
+			} else if (lastElement.calculationArray[0].constructor.name == "Calculation") {
+				calculation[calculation.length-1].calculationArray = this.removeEmptyCalculations(lastElement.calculationArray);
+			}
+		}
+
+		if (lastElement.calculationArray.length == 0) {
+			calculation.pop();
+		}
+	}
 	return calculation;
 }
 
@@ -340,21 +342,18 @@ Calculation.prototype.insertMultiplicationOperators = function(calculation) {
 // For example '1+2*3' would, after the first loop, be simplified to '1+6', as * has a higher priority than '+',
 // therefore associating the '2' with the '*' rather than the '+'.
 // After performing an operation we set the used elements to null, and remove all null values at the end of the loop.
-Calculation.prototype.runCalculation = function(inputCalculation) {
+Calculation.prototype.runCalculation = function() {
 	// Create a copy of the calculationArray, to ensure we're not altering the original array.
-	var workingCalculationArray = $.extend([], inputCalculation);
+	var workingCalculationArray = $.extend([], this.calculationArray);
 
-	if (workingCalculationArray.length == 0 || workingCalculationArray.length == 1 && workingCalculationArray[0] == '-') {
-		return 0;
-	}
-
+	workingCalculationArray = this.removeEmptyCalculations(workingCalculationArray);
 	workingCalculationArray = this.insertMultiplicationOperators(workingCalculationArray);
 
 	// Loop through the calculation array multiple times, gradually simplifying it until it contains only one element.
 	while (workingCalculationArray.length > 1 || workingCalculationArray[0].constructor.name == "Calculation") {
 		
 		if (isNaN(workingCalculationArray[0])) {
-			workingCalculationArray[0] = workingCalculationArray[0].runCalculation(workingCalculationArray[0].calculationArray);
+			workingCalculationArray[0] = workingCalculationArray[0].runCalculation();
 		}
 		
 		// The number we'll be using on the left hand side of the operator. (E.g. '1' in '1+2').
@@ -362,21 +361,17 @@ Calculation.prototype.runCalculation = function(inputCalculation) {
 		var currentOperator;
 
 		for (var i = 1; i < workingCalculationArray.length; i++) {
-			if (workingCalculationArray[i].constructor.name == "Operator") {
-				var currentElement = workingCalculationArray[i].operatorName;
-			} else {
-				var currentElement = workingCalculationArray[i];
-			}
-
 			// If the element is a calculation, replace it with the number it evaluates to. 
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
-				workingCalculationArray[i] = workingCalculationArray[i].runCalculation(workingCalculationArray[i].calculationArray);
+				workingCalculationArray[i] = workingCalculationArray[i].runCalculation();
 			}
 
 			if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1] != null) {
 				currentOperator = workingCalculationArray[i];
 			} else if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
 				memory = parseFloat(workingCalculationArray[i]);
+				currentOperator = workingCalculationArray[i+1];
+				i++;
 			} else {
 				// If, at this point, the current element is an operator, it means the last element of the calculation is an operator.
 				// This would result in an infinite loop since there is nothing to calculate it with (e.g. 3*blank), so it must be removed.

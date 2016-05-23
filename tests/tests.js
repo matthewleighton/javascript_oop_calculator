@@ -750,7 +750,7 @@ QUnit.test("If a calculation ends in an operator, it will be ignored while calcu
 	assert.equal(testCalculator.calculateAll(), 3, "The extra '+' is still taken into account if user inputs another digit");
 });
 
-QUnit.test("If a calculation ends in a calculation with does not contain a digit, both that end calculation and the preceeding operator will be ignored", function(assert) {
+QUnit.test("If a calculation ends in a calculation which does not contain a digit, both that end calculation and the preceeding operator will be ignored", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
 	testCalculator.receiveInput('+');
@@ -773,6 +773,17 @@ QUnit.test("'1+1()+': The addition operator and empty parenthesis will be ignore
 	assert.equal(testCalculator.calculateAll(), 2);
 });
 
+QUnit.test("'1(((((' evaluated to '1'", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput('1')
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('(');
+	testCalculator.receiveInput('(');
+
+	assert.equal(testCalculator.calculateAll(), 1);
+});
+
 QUnit.test("1(+(-(*(/((( = 1", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('1');
@@ -787,21 +798,24 @@ QUnit.test("1(+(-(*(/((( = 1", function(assert) {
 	testCalculator.receiveInput('(');
 	testCalculator.receiveInput('(');
 	testCalculator.receiveInput('(');
+	console.log("CalculationArray after inputs...");
+	console.log(testCalculator.baseCalculation.calculationArray);
 
 	assert.equal(testCalculator.calculateAll(), 1);
 });
 
-QUnit.test("Empty calculation returns 0", function(assert) {
+QUnit.test("Empty calculation will not be calculated.", function(assert) {
 	testCalculator = new Calculator;
-	
-	assert.equal(testCalculator.calculateAll(), 0);
+	testCalculator.equals();
+	assert.equal(testCalculator.screen.outputDisplay, '', "after running equals on an empty calculation, the outputDisplay contains nothing");
 });
 
-QUnit.test("Calculation consitiong of only '-' returns 0", function(assert) {
+QUnit.test("Calculation consitiong of only '-' will not be calculated", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('-');
+	testCalculator.equals()
 
-	assert.equal(testCalculator.calculateAll(), 0);
+	assert.equal(testCalculator.screen.outputDisplay, '');
 });
 
 QUnit.test("2+3() = 5", function(assert) {
