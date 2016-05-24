@@ -304,23 +304,22 @@ function Calculation(isBaseCalculation = false) {
 
 // Insert the implied multiplication operators between parentheses and adjacent parentheses or numbers.
 // E.g. between '1(2+3)' or '(2+3)(4+5)'.
+// Odd numbered elements should always be operators. If they're not it's a sign that the operator has been skipped and needs to be inserted.
 Calculation.prototype.insertMultiplicationOperators = function(calculation) {
-	var i = 0;
-	while (i < calculation.length) {
-		if (calculation[i] && i % 2 == 1 && calculation[i].constructor.name != "Operator") {
+	for (i = 0; i < calculation.length; i++) {
+		if (i % 2 == 1 && calculation[i].constructor.name != "Operator") {
 			calculation.splice(i, 0, new Operator('*'));
 		}
-
-		i++;
 	}
+
 	return calculation;
 }
 
 // Removes any empty calculations from the end of a calculation array.
 Calculation.prototype.removeEmptyCalculations = function(calculation) {
-	var lastElement = calculation[calculation.length-1]
+	var lastElement = calculation[calculation.length-1];
 
-	if (lastElement && lastElement.constructor.name == "Calculation") {
+	if (lastElement.constructor.name == "Calculation") {
 		if (lastElement.calculationArray.length == 1) {
 			if (lastElement.calculationArray[0] == '-') {
 				calculation.pop();
