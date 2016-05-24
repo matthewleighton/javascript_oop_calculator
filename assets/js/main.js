@@ -15,9 +15,9 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
 
 	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {
-		var innerLastElement = lastElement.calculationArray[lastElement.calculationArray.length-1];
+		//var innerLastElement = lastElement.calculationArray[lastElement.calculationArray.length-1];
 
-		if (closeParenthesis && innerLastElement && innerLastElement != '-' && (innerLastElement.constructor.name != "Calculation" || !innerLastElement.isOpen)) {
+		/*if (closeParenthesis && innerLastElement && innerLastElement != '-' && (innerLastElement.constructor.name != "Calculation" || !innerLastElement.isOpen)) {
 			if (innerLastElement.constructor.name == 'Operator') {
 				this.removePreviousInput();
 			}
@@ -25,9 +25,18 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 			this.screen.closeParenthesis();
 			this.screen.setInputDisplayFontSize();
 			return calculation;
-		}
+		}*/
 
 		return this.findInputTarget(lastElement, closeParenthesis);
+	}
+
+	if (closeParenthesis && calculation.calculationArray.length > 0 && lastElement != '-') {
+		if (lastElement.constructor.name == 'Operator') {
+			this.removePreviousInput();	
+		}
+		calculation.isOpen = false;
+		this.screen.closeParenthesis();
+		this.screen.setInputDisplayFontSize();
 	}
 
 	return calculation;
@@ -42,6 +51,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		if (this.screen.inputDisplay == 'Infinity' && (!this.isValidOperator(inputValue) || inputValue == '-')) {
 			this.screen.clearScreen();
 		} else if (this.screen.inputDisplay == 'Infinity') {
+			// Prevent input of operators following infinity.
 			return;
 		} else if (!this.isValidOperator(inputValue)) {
 			this.baseCalculation = new Calculation(true);
@@ -51,8 +61,8 @@ Calculator.prototype.receiveInput = function(inputValue) {
 	this.firstInputAfterEquals = false;
 
 	var closeParenthesis = inputValue == ')' ? true : false;
-	var currentCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
-	var lastElement = currentCalculation[currentCalculation.length-1];
+	var targetCalculation = this.findInputTarget(this.baseCalculation, closeParenthesis).calculationArray;
+	var lastElement = targetCalculation[targetCalculation.length-1];
 
 	// If the lastElement is a number, the variable 'lastInput' is its final digit.
 	if (!isNaN(lastElement)) {
@@ -61,7 +71,7 @@ Calculator.prototype.receiveInput = function(inputValue) {
 
 	// Special case for using a negative number as first input.
 	// Addition causes the calculation to be cleared, while all other operators are ignored.
-	if (currentCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
+	if (targetCalculation[0] == '-' && !this.isValidDigit(inputValue)) {
 		if (inputValue == '+') {
 			this.findInputTarget(this.baseCalculation).calculationArray = [];
 			this.screen.replaceLastInputCharacter('');
@@ -75,52 +85,52 @@ Calculator.prototype.receiveInput = function(inputValue) {
 		// Prevent input if the number already contains a decimal.
 		if (!isNaN(lastElement) && lastElement.indexOf('.') != -1) {
 			return;
-		} else if (currentCalculation.length < 1 || lastElement.constructor.name == 'Operator'|| lastElement == '-') {
+		} else if (targetCalculation.length < 1 || lastElement.constructor.name == 'Operator'|| lastElement == '-') {
 			this.receiveInput('0');
 		}
 
-		this.pushInput(currentCalculation, '.', '.', true);
+		this.pushInput(targetCalculation, '.', '.', true);
 
 	} else if (!isNaN(inputValue)) { // ----- Handle input of digits -----
 		
 		if (lastElement == '0') {
-			currentCalculation.pop();
+			targetCalculation.pop();
 			this.screen.replaceLastInputCharacter('');
-			lastElement = currentCalculation[currentCalculation.length-1];
+			lastElement = targetCalculation[targetCalculation.length-1];
 		}
 
-		if (!isNaN(lastElement) || finalDigit == '.' || currentCalculation[0] == '-') {
-			this.pushInput(currentCalculation, inputValue, inputValue, true);
+		if (!isNaN(lastElement) || finalDigit == '.' || targetCalculation[0] == '-') {
+			this.pushInput(targetCalculation, inputValue, inputValue, true);
 		} else {
-			this.pushInput(currentCalculation, inputValue, inputValue);
+			this.pushInput(targetCalculation, inputValue, inputValue);
 		}
 	
 	} else if (this.isValidOperator(inputValue)) { // ----- Handle input of operators -----
 		
 		// Operators as will be ignored as first input, except for '-'.
-		if (currentCalculation.length == 0) {
+		if (targetCalculation.length == 0) {
 			if (inputValue == '-') {
-				this.pushInput(currentCalculation, inputValue, inputValue);
+				this.pushInput(targetCalculation, inputValue, inputValue);
 			}
 			return;
 		}
 
 		// If the previous input is also an operator, replace it with the new one.
-		if (currentCalculation[currentCalculation.length-1].constructor.name == "Operator") {
-			currentCalculation[currentCalculation.length-1] = new Operator(inputValue);
+		if (targetCalculation[targetCalculation.length-1].constructor.name == "Operator") {
+			targetCalculation[targetCalculation.length-1] = new Operator(inputValue);
 			calculator.screen.replaceLastInputCharacter(inputValue);
 			this.screen.setInputDisplayFontSize();
 			return;
 		}
 
 		if (finalDigit == '.') {
-			currentCalculation[currentCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
+			targetCalculation[targetCalculation.length-1] = lastElement.substring(0, lastElement.length-1);
 			this.screen.replaceLastInputCharacter('');
 		}
-		this.pushInput(currentCalculation, new Operator(inputValue), inputValue);
+		this.pushInput(targetCalculation, new Operator(inputValue), inputValue);
 
 	} else if (inputValue == '(') { // ----- Handle input of open parenthesis -----
-		this.pushInput(currentCalculation, new Calculation, '(');
+		this.pushInput(targetCalculation, new Calculation, '(');
 	}
 }
 
@@ -228,7 +238,6 @@ Calculator.prototype.readyToCalculate = function(calculation) {
 
 // Performs all calculations, including inner parentheses, and returns the answer.
 Calculator.prototype.calculateAll = function() {
-	console.log("----- Running CalculateAll() -----");
 	var currentAnswer = this.baseCalculation.runCalculation();
 	currentAnswer = this.roundCalculationAnswer(currentAnswer);
 	this.screen.updateOutputDisplay(currentAnswer);
@@ -302,19 +311,6 @@ function Calculation(isBaseCalculation = false) {
 	this.isBaseCalculation = isBaseCalculation;
 }
 
-// Insert the implied multiplication operators between parentheses and adjacent parentheses or numbers.
-// E.g. between '1(2+3)' or '(2+3)(4+5)'.
-// Odd numbered elements should always be operators. If they're not it's a sign that the operator has been skipped and needs to be inserted.
-Calculation.prototype.insertMultiplicationOperators = function(calculation) {
-	for (i = 0; i < calculation.length; i++) {
-		if (i % 2 == 1 && calculation[i].constructor.name != "Operator") {
-			calculation.splice(i, 0, new Operator('*'));
-		}
-	}
-
-	return calculation;
-}
-
 // Removes any empty calculations from the end of a calculation array.
 Calculation.prototype.removeEmptyCalculations = function(calculation) {
 	var lastElement = calculation[calculation.length-1];
@@ -332,6 +328,19 @@ Calculation.prototype.removeEmptyCalculations = function(calculation) {
 			calculation.pop();
 		}
 	}
+	return calculation;
+}
+
+// Insert the implied multiplication operators between parentheses and adjacent numbers or parentheses.
+// E.g. between '1(2+3)' or '(2+3)(4+5)'.
+// Odd numbered elements should always be operators. If they're not it's a sign that the operator has been skipped and needs to be inserted.
+Calculation.prototype.insertMultiplicationOperators = function(calculation) {
+	for (i = 0; i < calculation.length; i++) {
+		if (i % 2 == 1 && calculation[i].constructor.name != "Operator") {
+			calculation.splice(i, 0, new Operator('*'));
+		}
+	}
+
 	return calculation;
 }
 
@@ -360,28 +369,27 @@ Calculation.prototype.runCalculation = function() {
 		var currentOperator;
 
 		for (var i = 1; i < workingCalculationArray.length; i++) {
-			// If the element is a calculation, replace it with the number it evaluates to. 
 			if (workingCalculationArray[i].constructor.name == "Calculation") {
 				workingCalculationArray[i] = workingCalculationArray[i].runCalculation();
 			}
 
-			if (workingCalculationArray[i].constructor.name == "Operator" && workingCalculationArray[i+1] != null) {
-				currentOperator = workingCalculationArray[i];
+			if (workingCalculationArray[i].constructor.name == "Operator") {
+				if (workingCalculationArray[i+1] != null) {
+					currentOperator = workingCalculationArray[i];
+				} else {
+					workingCalculationArray[i] = null;
+				}				
 			} else if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
 				memory = parseFloat(workingCalculationArray[i]);
 				currentOperator = workingCalculationArray[i+1];
 				i++;
 			} else {
-				// If, at this point, the current element is an operator, it means the last element of the calculation is an operator.
-				// This would result in an infinite loop since there is nothing to calculate it with (e.g. 3*blank), so it must be removed.
-				if (workingCalculationArray[i].constructor.name == "Operator") {
-					workingCalculationArray[i] = null;
-				} else {
-					workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
-					memory = workingCalculationArray[i];
-					workingCalculationArray[i-1] = null;
-					workingCalculationArray[i-2] = null;
-				}
+				workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
+				memory = workingCalculationArray[i];
+				workingCalculationArray[i-1] = null;
+				workingCalculationArray[i-2] = null;
+				currentOperator = workingCalculationArray[i+1];
+				i++;
 			}
 		}
 	
