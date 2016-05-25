@@ -13,20 +13,8 @@ function Calculator() {
 // For example, if we have several parentheses this will return the last open one.
 Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = false) {
 	var lastElement = calculation.calculationArray[calculation.calculationArray.length-1];
-
+	
 	if (lastElement && lastElement.constructor.name == "Calculation" && lastElement.isOpen) {
-		//var innerLastElement = lastElement.calculationArray[lastElement.calculationArray.length-1];
-
-		/*if (closeParenthesis && innerLastElement && innerLastElement != '-' && (innerLastElement.constructor.name != "Calculation" || !innerLastElement.isOpen)) {
-			if (innerLastElement.constructor.name == 'Operator') {
-				this.removePreviousInput();
-			}
-			lastElement.isOpen = false;
-			this.screen.closeParenthesis();
-			this.screen.setInputDisplayFontSize();
-			return calculation;
-		}*/
-
 		return this.findInputTarget(lastElement, closeParenthesis);
 	}
 
@@ -335,8 +323,8 @@ Calculation.prototype.removeEmptyCalculations = function(calculation) {
 // E.g. between '1(2+3)' or '(2+3)(4+5)'.
 // Odd numbered elements should always be operators. If they're not it's a sign that the operator has been skipped and needs to be inserted.
 Calculation.prototype.insertMultiplicationOperators = function(calculation) {
-	for (i = 0; i < calculation.length; i++) {
-		if (i % 2 == 1 && calculation[i].constructor.name != "Operator") {
+	for (i = 1; i < calculation.length; i+=2) {
+		if (calculation[i].constructor.name != "Operator") {
 			calculation.splice(i, 0, new Operator('*'));
 		}
 	}
