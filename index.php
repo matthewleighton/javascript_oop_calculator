@@ -67,9 +67,6 @@
 </div>
 
 <div id='description-area'>
-	<div class='description-page' id='description-summary'>
-		This is the description page.
-	</div>
 	<div id='sidebar'>
 		<ul>
 			<li>Summary</li>
@@ -77,7 +74,9 @@
 			<li>Calculating</li>
 		</ul>
 	</div>
-	
+	<div class='description-page' id='description-summary'>
+		This is the description page.
+	</div>
 </div>
 
 

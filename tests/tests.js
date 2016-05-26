@@ -367,6 +367,18 @@ QUnit.test("A parenthesis containing only '-' cannot be closed", function(assert
 	assert.equal(testCalculator.baseCalculation.calculationArray[0].isOpen, true, "The inner calculation is still open after trying to close it");
 });
 
+QUnit.test("Cannot enter a ')' if no parentheses are open", function(assert) {
+	testCalculator = new Calculator;
+	testCalculator.receiveInput(')');
+	assert.equal(testCalculator.screen.inputDisplay, '', "After entering just a ')', inputDisplay is empty");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, 0, "Calculation array is still empty");
+
+	testCalculator.receiveInput('2');
+	testCalculator.receiveInput(')');
+	assert.equal(testCalculator.screen.inputDisplay, '2', "After entering '2)', inputDisplay only contains '2'");
+	assert.equal(testCalculator.baseCalculation.calculationArray.length, '1', "Calculation array contains one element");
+});
+
 QUnit.test("Closing a parenthesis which ends in an operator will remove teh operator before closing", function(assert) {
 	testCalculator = new Calculator;
 	testCalculator.receiveInput('(');

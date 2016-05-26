@@ -18,7 +18,7 @@ Calculator.prototype.findInputTarget = function(calculation, closeParenthesis = 
 		return this.findInputTarget(lastElement, closeParenthesis);
 	}
 
-	if (closeParenthesis && calculation.calculationArray.length > 0 && lastElement != '-') {
+	if (closeParenthesis && calculation.calculationArray.length > 0 && lastElement != '-' && !calculation.isBaseCalculation) {
 		if (lastElement.constructor.name == 'Operator') {
 			this.removePreviousInput();	
 		}
@@ -328,7 +328,6 @@ Calculation.prototype.insertMultiplicationOperators = function(calculation) {
 			calculation.splice(i, 0, new Operator('*'));
 		}
 	}
-
 	return calculation;
 }
 
