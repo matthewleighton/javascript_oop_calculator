@@ -147,6 +147,7 @@ Calculator.prototype.pushInput = function(calculation, pushValue, displayValue, 
 
 // Remove the user's previous input via the 'C' button.
 Calculator.prototype.removePreviousInput = function() {
+	console.log("Entering C");
 	var currentCalculation = this.findInputTarget(this.baseCalculation);
 
 	// The current calculation should be removed if it is empty, but only if it is NOT the base calculation.
@@ -165,6 +166,7 @@ Calculator.prototype.removePreviousInput = function() {
 		this.screen.setInputDisplayFontSize();
 		return;
 	}
+	console.log("Current calculation contains more than 0 elements");
 
 	var currentCalculation = currentCalculation.calculationArray;
 	var lastElement = currentCalculation[currentCalculation.length-1];
@@ -177,6 +179,7 @@ Calculator.prototype.removePreviousInput = function() {
 		if (currentCalculation[currentCalculation.length-1].length == 0) {
 			currentCalculation.pop();
 		}
+		console.log("Removing digit");
 	} else if (lastElement.constructor.name == "Operator" || lastElement == '-') {
 		// Remove the last operator.
 		currentCalculation.pop();
@@ -189,11 +192,14 @@ Calculator.prototype.removePreviousInput = function() {
 	}
 
 	if (this.readyToCalculate(this.baseCalculation)) {
+		console.log(this.baseCalculation.calculationArray);
+		console.log("Running calculation");
 		this.calculateAll();
 	} else {
 		this.screen.clearOutputDisplay();
 	}
 	this.screen.setInputDisplayFontSize();
+	console.log("Finished C");
 }
 
 // Returns true if the input value is either a digit or '.'
@@ -369,7 +375,6 @@ Calculation.prototype.runCalculation = function() {
 			} else if (workingCalculationArray[i+1] && workingCalculationArray[i+1].priority > currentOperator.priority) {
 				memory = parseFloat(workingCalculationArray[i]);
 				currentOperator = workingCalculationArray[i+1];
-				i++;
 			} else {
 				workingCalculationArray[i] = currentOperator.performOperation(memory, workingCalculationArray[i]);
 				memory = workingCalculationArray[i];
