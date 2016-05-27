@@ -20,7 +20,9 @@ As well as Calculations, the other important object is the Operator. Rather than
  * Due to the order of operations, we cannot simply tackle a calculation from left to right. For example, 1+2\*3, due to multiplication having a higher priority than addition, really means 1+(2*3). The priority attribute indicates to which operator a number should be associated. In this case the 2 is associated with the multiplication operator, rather than the addition.
 
  * Addition and subtraction - priority 1.
+
  * Multiplication and division - priority 2.
+
  * Exponents - priority 3.
  * Parentheses, although they outrank exponents, do not have a priority attribute, as they are not operations but rather another calculation object within the parent one.
 
