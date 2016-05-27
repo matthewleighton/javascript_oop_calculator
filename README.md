@@ -1,5 +1,7 @@
 #Javascript Object Oriented Calculator
 
+Use the calculator online [here](http://matthewleighton.co.uk/calculator/).
+
 ##Summary
 Calculations (e.g. 2+3) are stored as an array in a “Calculation” object.
 
